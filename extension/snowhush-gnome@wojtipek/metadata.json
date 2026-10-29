@@ -1,0 +1,20 @@
+{
+  "uuid": "snowhush-gnome@wojtipek",
+  "name": "Snowhush dla GNOME",
+  "description": "Śnieg pada na pulpicie, osiada na górnych krawędziach okien i na dole ekranu. Kursor rozgarnia zaspy, a przeciągane okna zrzucają z siebie śnieg. Ustawienia są w Szybkich ustawieniach, w kafelku „Śnieg”.",
+  "shell-version": [
+    "46",
+    "47",
+    "48",
+    "49",
+    "50",
+    "51"
+  ],
+  "session-modes": [
+    "user",
+    "unlock-dialog"
+  ],
+  "settings-schema": "org.gnome.shell.extensions.snowhush-gnome",
+  "url": "https://github.com/wojtipek/snowhush-gnome",
+  "version-name": "0.2.4"
+}

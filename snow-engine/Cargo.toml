@@ -1,0 +1,14 @@
+[package]
+name = "snow-engine"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+publish = false
+description = "Silnik śniegu dla GNOME: nakładka Wayland + OpenGL ES, sterowana przez rozszerzenie"
+
+[[bin]]
+name = "snowhush-engine"
+path = "src/main.rs"
+
+[dependencies]
+snow-core = { path = "../snow-core" }

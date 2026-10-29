@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <enum id="org.gnome.shell.extensions.snowhush-gnome.Snowfall">
+    <value nick="off" value="0"/>
+    <value nick="light" value="1"/>
+    <value nick="steady" value="2"/>
+    <value nick="heavy" value="3"/>
+    <value nick="variable" value="4"/>
+  </enum>
+  <schema id="org.gnome.shell.extensions.snowhush-gnome" path="/org/gnome/shell/extensions/snowhush-gnome/">
+    <key name="enabled" type="b">
+      <default>true</default>
+      <summary>Śnieg włączony</summary>
+    </key>
+    <key name="snowfall" enum="org.gnome.shell.extensions.snowhush-gnome.Snowfall">
+      <default>'steady'</default>
+      <summary>Opady śniegu</summary>
+    </key>
+    <key name="accumulate" type="b">
+      <default>true</default>
+      <summary>Śnieg się gromadzi</summary>
+    </key>
+    <key name="melt" type="b">
+      <default>true</default>
+      <summary>Topnienie</summary>
+    </key>
+    <key name="snow-on-windows" type="b">
+      <default>true</default>
+      <summary>Śnieg na oknach</summary>
+    </key>
+    <key name="over-windows" type="b">
+      <default>true</default>
+      <summary>Płatki widoczne nad oknami; wyłączone – płatki chowają się za oknami, a zaspy na oknach zostają</summary>
+    </key>
+    <key name="behind-windows" type="b">
+      <default>false</default>
+      <summary>Śnieg za oknami, na tapecie</summary>
+    </key>
+    <key name="calm-fps" type="i">
+      <range min="10" max="60"/>
+      <default>20</default>
+      <summary>Klatki na sekundę przy spokojnym padaniu</summary>
+    </key>
+    <key name="sharp" type="b">
+      <default>false</default>
+      <summary>Ostrzejszy obraz (rysowanie w pełnej rozdzielczości ekranu)</summary>
+    </key>
+    <key name="language" type="s">
+      <default>''</default>
+      <summary>Język menu; pusty – język systemu</summary>
+    </key>
+  </schema>
+</schemalist>

@@ -1,0 +1,12 @@
+[workspace]
+resolver = "3"
+members = ["snow-core", "snow-engine", "tools/fake-compositor"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev.package.snow-core]
+opt-level = 3

@@ -17,14 +17,15 @@ Inne pulpity z Waylandem mają własne porty: [KDE Plasma](https://github.com/T
 
 ## Instalacja
 
-1. Pobierz `snowhush-gnome-<wersja>.zip` z [wydań (Releases)](https://github.com/wojtipek/snowhush-gnome/releases).
-2. Wklej w terminalu polecenie, które rozpakuje najnowszą paczkę z folderu Pobrane i uruchomi instalator:
+Wklej w terminalu to polecenie. Pobiera najnowsze wydanie, instaluje je i sprząta po sobie:
 
-   ```bash
-   cd "$(xdg-user-dir DOWNLOAD)" && unzip -o "$(ls -t snowhush-gnome-*.zip | head -1)" && cd snowhush-gnome && ./install.sh && cd .. && rm -rf snowhush-gnome
-   ```
+```bash
+T=$(mktemp -d) && curl -fsSL -o "$T/s.zip" https://github.com/wojtipek/snowhush-gnome/releases/latest/download/snowhush-gnome.zip && unzip -q "$T/s.zip" -d "$T" && bash "$T/snowhush-gnome/install.sh"; rm -rf "$T"
+```
 
-3. Wyloguj się i zaloguj ponownie. Na Waylandzie GNOME wczytuje nowe rozszerzenia dopiero przy logowaniu.
+Potem wyloguj się i zaloguj ponownie. Na Waylandzie GNOME wczytuje nowe rozszerzenia dopiero przy logowaniu.
+
+To samo polecenie aktualizuje zainstalowaną wersję do najnowszej. Można też samemu pobrać `snowhush-gnome.zip` z [wydań (Releases)](https://github.com/wojtipek/snowhush-gnome/releases), rozpakować i uruchomić `install.sh`.
 
 Wszystko trafia do jednego folderu: `~/.local/share/gnome-shell/extensions/snowhush-gnome@wojtipek`.
 

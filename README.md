@@ -17,14 +17,15 @@ Other Wayland desktops have their own ports: [KDE Plasma](https://github.com/Try
 
 ## Install
 
-1. Download `snowhush-gnome-<version>.zip` from [Releases](https://github.com/wojtipek/snowhush-gnome/releases).
-2. Unzip the newest one in your Downloads folder and run the installer:
+Paste this into a terminal. It downloads the latest release, installs it and cleans up after itself:
 
-   ```bash
-   cd "$(xdg-user-dir DOWNLOAD)" && unzip -o "$(ls -t snowhush-gnome-*.zip | head -1)" && cd snowhush-gnome && ./install.sh && cd .. && rm -rf snowhush-gnome
-   ```
+```bash
+T=$(mktemp -d) && curl -fsSL -o "$T/s.zip" https://github.com/wojtipek/snowhush-gnome/releases/latest/download/snowhush-gnome.zip && unzip -q "$T/s.zip" -d "$T" && bash "$T/snowhush-gnome/install.sh"; rm -rf "$T"
+```
 
-3. Log out and back in. On Wayland, GNOME only loads new extensions at login.
+Then log out and back in. On Wayland, GNOME only loads new extensions at login.
+
+The same command updates an existing installation to the latest version. You can also download `snowhush-gnome.zip` from [Releases](https://github.com/wojtipek/snowhush-gnome/releases) yourself, unzip it and run `install.sh`.
 
 Everything goes into one folder, `~/.local/share/gnome-shell/extensions/snowhush-gnome@wojtipek`.
 

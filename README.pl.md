@@ -43,7 +43,7 @@ W oknie ustawień (dostępnym też przy rozszerzeniu w aplikacji *Rozszerzenia
 - **Śnieg na oknach**, **Płatki nad oknami** (po wyłączeniu płatki chowają się za oknami, a śnieg na krawędziach okien zostaje)
 - **Za oknami**: śnieg tylko na tapecie
 - **Ostrzejszy obraz**: rysowanie w pełnej rozdzielczości ekranu zamiast w skali GNOME (więcej pracy dla karty graficznej)
-- **Język**: automatycznie (jak w systemie) albo jeden z 14 języków
+- **Język**: automatycznie (jak w systemie) albo jeden z 15 języków
 
 Śnieg zatrzymuje się przy aplikacjach na pełnym ekranie, w Przeglądzie i na ekranie blokady. W trybie oszczędzania energii pada go mniej.
 
@@ -57,9 +57,9 @@ Polecenie usuwa rozszerzenie, silnik i ustawienia. Nic po nich nie zostaje.
 
 ## Języki
 
-Menu jest w języku systemu: polskim (język podstawowy), angielskim (brytyjskim), hiszpańskim (meksykańskim), portugalskim (brazylijskim), katalońskim, niemieckim, czeskim, słowackim, ukraińskim, litewskim, węgierskim, chorwackim, esperanto albo łacinie. Każdy inny język dostaje łacinę. Język można też wybrać samemu: **Opcje** → **Język**.
+Menu jest w języku systemu: polskim (język podstawowy), angielskim (brytyjskim), rosyjski, hiszpańskim (meksykańskim), portugalskim (brazylijskim), katalońskim, niemieckim, czeskim, słowackim, ukraińskim, litewskim, węgierskim, chorwackim, esperanto albo łacinie. Każdy inny język dostaje łacinę. Język można też wybrać samemu: **Opcje** → **Język**.
 
-Tłumaczeń nie pisali rodzimi użytkownicy tych języków. Poprawki i nowe języki są mile widziane. Wszystkie tłumaczenia są w jednej tabeli w pliku [`i18n.js`](extension/snowhush-gnome@wojtipek/i18n.js).
+Większość tłumaczeń nie została napisana przez rodzimych użytkowników tych języków. Poprawki i nowe języki są mile widziane. Wszystkie tłumaczenia są w jednej tabeli w pliku [`i18n.js`](extension/snowhush-gnome@wojtipek/i18n.js).
 
 ## Dla programistów
 

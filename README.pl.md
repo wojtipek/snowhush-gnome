@@ -1,6 +1,6 @@
 # Snowhush dla GNOME
 
-[English](README.md) · **Polski**
+[English](README.md) · **Polski** · [Русский](README.ru.md)
 
 Śnieg na pulpicie GNOME. Pada spokojnie, osiada na górnych krawędziach okien i usypuje zaspy na dole ekranu. Kursor rozgarnia zaspy, przeciągane albo potrząsane okna zrzucają z siebie śnieg, a zamknięte okna zostawiają grudki, które rozsypują się w puch.
 

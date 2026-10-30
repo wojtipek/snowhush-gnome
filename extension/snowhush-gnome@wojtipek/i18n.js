@@ -24,9 +24,9 @@ export const TRANSLATIONS = {
     en: ['Snow', 'Snowhush for GNOME', 'No snowfall', 'Light', 'Moderate', 'Heavy', 'Variable',
         'Blow the snow away', 'Accumulation', 'Melting', 'Snow on windows', 'Flakes over windows',
         'Behind windows', 'Sharper image', 'Language', 'Automatic', 'Options'],
-    ru: ['Снег', 'Snowhush для GNOME', 'Отключить', 'Легкий', 'Средний', 'Сильный', 'Изменчивый',
+    ru: ['Снег', 'Snowhush для GNOME', 'Отключить', 'Легкий', 'Средний', 'Мощный', 'Разнообразный',
         'Сдуть снег', 'Сугробы', 'Таяние', 'Снег на окнах', 'Снежинки поверх окон',
-        'Behind windows', 'Sharper image', 'Language', 'Automatic', 'Options']
+        'Позади окон', 'Повышенная чёткость', 'Язык', 'Автоматически', 'Настройки']
     es: ['Nieve', 'Snowhush para GNOME', 'Sin nevada', 'Ligera', 'Moderada', 'Intensa', 'Variable',
         'Soplar la nieve', 'Acumulación', 'Deshielo', 'Nieve en las ventanas', 'Copos sobre las ventanas',
         'Detrás de las ventanas', 'Imagen más nítida', 'Idioma', 'Automático', 'Opciones'],

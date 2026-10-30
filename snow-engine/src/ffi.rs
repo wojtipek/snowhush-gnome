@@ -56,6 +56,17 @@ pub fn local_hour() -> f32 {
     }
 }
 
+pub fn local_date() -> (u32, u32, f32) {
+    unsafe {
+        let now = time(std::ptr::null_mut());
+        let mut tm: Tm = std::mem::zeroed();
+        if localtime_r(&now, &mut tm).is_null() {
+            return (1, 1, 12.0);
+        }
+        (tm.mon as u32 + 1, tm.mday as u32, tm.hour as f32 + tm.min as f32 / 60.0)
+    }
+}
+
 pub struct Library {
     handle: *mut c_void,
     name: String,

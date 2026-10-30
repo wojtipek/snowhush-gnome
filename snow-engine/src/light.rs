@@ -1,9 +1,15 @@
 use snow_core::geometry::smoothstep;
+use snow_core::halloween;
 
 use crate::desktop::Power;
 
 pub fn daylight() -> [f32; 3] {
-    daylight_at(crate::ffi::local_hour())
+    daylight_at(halloween::previewed_hour().unwrap_or_else(crate::ffi::local_hour))
+}
+
+pub fn is_halloween() -> bool {
+    let (month, day, hour) = crate::ffi::local_date();
+    halloween::is_halloween(month, day, hour as u32)
 }
 
 pub fn daylight_at(hour: f32) -> [f32; 3] {

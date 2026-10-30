@@ -18,6 +18,7 @@ pub enum Command {
     Sharp(bool),
     Power(Power),
     ClearSnow(bool),
+    Halloween(bool),
     Pause(bool),
     Quit,
 }
@@ -59,6 +60,7 @@ pub fn parse(line: &str) -> Result<Command, String> {
             ["over-windows", _] => flag(rest.get(1)).map(Command::OverWindows),
             ["calm-fps", value] => value.parse::<u32>().map(|v| Command::CalmFps(v.clamp(10, 60))).map_err(|_| bad()),
             ["sharp", _] => flag(rest.get(1)).map(Command::Sharp),
+            ["halloween", _] => flag(rest.get(1)).map(Command::Halloween),
             _ => Err(bad()),
         },
         "power" => match rest.as_slice() {
@@ -126,6 +128,7 @@ mod tests {
             }])
         );
         assert_eq!(parse("clear 0").unwrap(), Command::ClearSnow(false));
+        assert_eq!(parse("set halloween 0").unwrap(), Command::Halloween(false));
         assert_eq!(parse("clear 1").unwrap(), Command::ClearSnow(true));
         assert_eq!(parse("windows 0").unwrap(), Command::Windows { moving: false, list: vec![] });
         assert_eq!(parse("elsewhere 3 4").unwrap(), Command::Elsewhere(vec![3, 4]));

@@ -242,7 +242,7 @@ class FakeSettings extends Emitter {
     }
 }
 const menuSettings = new FakeSettings({enabled: true, snowfall: 'heavy', language: '', accumulate: true, melt: true,
-    'snow-on-windows': true, 'over-windows': true, 'behind-windows': false, sharp: false});
+    'snow-on-windows': true, 'over-windows': true, 'behind-windows': false, sharp: false, halloween: true});
 let cleared = 0, opened = 0;
 const {SnowIndicator} = await import(`${EXT}/indicator.js`);
 const indicator = new SnowIndicator(menuSettings, () => cleared++, () => opened++);
@@ -269,8 +269,8 @@ const [snowGroup, languageGroup] = window.page.children;
 assert.equal(window.title, 'Snowhush dla GNOME');
 assert.equal(snowGroup.title, 'Śnieg');
 assert.deepEqual(snowGroup.children.map(r => r.title),
-    ['Gromadzenie', 'Topnienie', 'Śnieg na oknach', 'Płatki nad oknami', 'Za oknami', 'Ostrzejszy obraz']);
-assert.deepEqual(snowGroup.children.map(r => r.active), [true, true, true, true, false, false]);
+    ['Gromadzenie', 'Topnienie', 'Śnieg na oknach', 'Płatki nad oknami', 'Za oknami', 'Ostrzejszy obraz', 'Halloween']);
+assert.deepEqual(snowGroup.children.map(r => r.active), [true, true, true, true, false, false, true]);
 const languageRow = languageGroup.children[0];
 assert.equal(languageRow.title, 'Język');
 assert.equal(languageRow.model.items.length, 15);

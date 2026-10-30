@@ -35,6 +35,9 @@ pub const TEXTURE_MAG_FILTER: GLenum = 0x2800;
 pub const TEXTURE_WRAP_S: GLenum = 0x2802;
 pub const TEXTURE_WRAP_T: GLenum = 0x2803;
 pub const NEAREST: GLint = 0x2600;
+pub const LINEAR: GLint = 0x2601;
+pub const LINEAR_MIPMAP_LINEAR: GLint = 0x2703;
+pub const TEXTURE1: GLenum = 0x84C1;
 pub const CLAMP_TO_EDGE: GLint = 0x812F;
 pub const R32F: GLint = 0x822E;
 pub const RED: GLenum = 0x1903;
@@ -115,6 +118,8 @@ gl_functions! {
     BindTexture: fn(GLenum, GLuint);
     ActiveTexture: fn(GLenum);
     TexParameteri: fn(GLenum, GLenum, GLint);
+    GenerateMipmap: fn(GLenum);
+    Uniform2fv: fn(GLint, GLsizei, *const GLfloat);
     TexImage2D: fn(GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, *const c_void);
     TexSubImage2D: fn(GLenum, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, *const c_void);
     PixelStorei: fn(GLenum, GLint);

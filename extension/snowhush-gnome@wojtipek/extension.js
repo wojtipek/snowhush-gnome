@@ -102,6 +102,7 @@ export default class SnowhushExtension extends Extension {
         this._engine.send(`set over-windows ${s.get_boolean('over-windows') ? 1 : 0}`);
         this._engine.send(`set sharp ${s.get_boolean('sharp') ? 1 : 0}`);
         this._engine.send(`set calm-fps ${s.get_int('calm-fps')}`);
+        this._engine.send(`set halloween ${s.get_boolean('halloween') ? 1 : 0}`);
         if (this._running && this._scoutRunning)
             this._scout.sendAll();
     }
@@ -125,6 +126,7 @@ export default class SnowhushExtension extends Extension {
         case 'melt':
         case 'sharp':
         case 'over-windows':
+        case 'halloween':
             this._engine.send(`set ${key} ${s.get_boolean(key) ? 1 : 0}`);
             break;
         case 'snow-on-windows':

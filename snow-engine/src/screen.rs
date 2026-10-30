@@ -28,6 +28,7 @@ pub struct Screen {
     cleared: bool,
     damage: Damage,
     pub damaged: f32,
+    lantern: V2,
 }
 
 impl Screen {
@@ -57,6 +58,7 @@ impl Screen {
             cleared: false,
             damage: Damage::new(),
             damaged: 0.0,
+            lantern: AWAY,
         };
         screen.apply_sharpness(settings.sharp);
         Ok(screen)
@@ -116,7 +118,7 @@ impl Screen {
         desktop: &Desktop,
         settings: &Settings,
         power: Power,
-        light: [f32; 3],
+        (light, night): ([f32; 3], f32),
         time: f32,
         now: Instant,
     ) -> Result<bool, String> {
@@ -156,12 +158,15 @@ impl Screen {
         for _ in 0..substeps {
             changed |= self.simulation.step(dt, cursor);
         }
+        let lantern_moved = night > 0.0 && (cursor - self.lantern).length() > 0.5;
+        self.lantern = cursor;
+        changed |= lantern_moved;
 
         let fastest: u32 = 60;
         let calm = if power == Power::Saver { settings.calm_fps.min(24) } else { settings.calm_fps };
         let rate = match self.simulation.pace() {
-            Pace::Calm => calm,
-            Pace::Lively | Pace::Interactive => fastest.max(calm),
+            Pace::Calm if !lantern_moved => calm,
+            _ => fastest.max(calm),
         };
         self.next_due = now + Duration::from_secs_f64(1.0 / rate as f64);
         self.idle_frames = if changed { 0 } else { self.idle_frames + 1 };
@@ -178,7 +183,7 @@ impl Screen {
         }
         self.cleared = false;
         egl.make_current(self.surface)?;
-        let ambient = Ambient { light, shadow_tint: [0.0; 4] };
+        let ambient = Ambient { light, shadow_tint: [0.0; 4], night, lantern: cursor };
         let masks = if settings.over_windows {
             Vec::new()
         } else {
@@ -186,8 +191,13 @@ impl Screen {
         };
         let size = self.window.buffer_size();
         let scale = self.window.buffer_scale() as f32;
-        let (sprites, piles) = renderer.draw(&self.simulation, size, scale, ambient, time, &masks)?;
-        let rects = self.damage.compute(size, scale, renderer.sprites(sprites), &piles);
+        let drawn = renderer.draw(&self.simulation, size, scale, ambient, time, &masks)?;
+        let rects = if drawn.extras {
+            self.damage.invalidate();
+            None
+        } else {
+            self.damage.compute(size, scale, renderer.sprites(drawn.sprites), &drawn.piles)
+        };
         egl.swap_damaged(self.surface, rects.as_deref())?;
         self.damaged = self.damage.last_fraction;
         Ok(true)

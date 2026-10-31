@@ -44,7 +44,7 @@ W oknie ustawień (dostępnym też przy rozszerzeniu w aplikacji *Rozszerzenia
 - **Za oknami**: śnieg tylko na tapecie
 - **Ostrzejszy obraz**: rysowanie w pełnej rozdzielczości ekranu zamiast w skali GNOME (więcej pracy dla karty graficznej)
 - **Halloween**: od 30 października do świtu 1 listopada z zasp wstają duchy ze śniegu, w śniegu świecą dynie, a kursor niesie świeczkę (domyślnie włączone)
-- **Język**: automatycznie (jak w systemie) albo jeden z 14 języków
+- **Język**: automatycznie (jak w systemie) albo jeden z 15 języków
 
 Śnieg zatrzymuje się przy aplikacjach na pełnym ekranie, w Przeglądzie i na ekranie blokady. W trybie oszczędzania energii pada go mniej.
 

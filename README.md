@@ -44,7 +44,7 @@ The settings window (also under the extension in the *Extensions* app) has:
 - **Behind windows**: snow only on the wallpaper
 - **Sharper image**: draws at the full screen resolution instead of the GNOME scale (uses more GPU)
 - **Halloween**: from 30 October until dawn on 1 November, ghosts made of snow rise out of the drifts, jack-o'-lanterns glow in the snow and the cursor carries a candle (on by default)
-- **Language**: automatic (follows the system) or any of the 14 languages below
+- **Language**: automatic (follows the system) or any of the 15 languages below
 
 The snow stops for fullscreen apps, the overview and the lock screen, and gets lighter in power-saver mode.
 
@@ -58,7 +58,7 @@ This removes the extension, the engine and the settings. Nothing is left behind.
 
 ## Languages
 
-The menu follows your system language: Polish (the base language), English (British), Spanish (Mexican), Portuguese (Brazilian), Catalan, German, Czech, Slovak, Ukrainian, Lithuanian, Hungarian, Croatian, Esperanto and Latin. Any other language gets Latin. You can also pick the language yourself under **Options → Language**.
+The menu follows your system language: Polish (the base language), English (British), Russian, Spanish (Mexican), Portuguese (Brazilian), Catalan, German, Czech, Slovak, Ukrainian, Lithuanian, Hungarian, Croatian, Esperanto and Latin. Any other language gets Latin. You can also pick the language yourself under **Options → Language**.
 
 Most of the translations were not written by native speakers. Corrections and new languages are welcome: they all live in one table in [`i18n.js`](extension/snowhush-gnome@wojtipek/i18n.js).
 

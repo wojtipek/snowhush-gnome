@@ -219,7 +219,7 @@ for (const [code, list] of Object.entries(i18n.TRANSLATIONS)) {
     assert.ok(list.every(text => typeof text === 'string' && text.trim()), `puste napisy: ${code}`);
 }
 assert.deepEqual(Object.keys(i18n.TRANSLATIONS).sort(),
-    ['ca', 'cs', 'de', 'en', 'eo', 'es', 'hr', 'hu', 'la', 'lt', 'pt', 'sk', 'uk']);
+    ['ca', 'cs', 'de', 'en', 'eo', 'es', 'hr', 'hu', 'la', 'lt', 'pt', 'ru', 'sk', 'uk']);
 const fs = await import('node:fs');
 const used = ['indicator.js', 'prefs.js'].flatMap(file => fs.readFileSync(new URL(`${EXT}/${file}`, import.meta.url), 'utf8')
     .match(/'([A-ZĆŁŚŻŹ][^']*)'/g).map(m => m.slice(1, -1)));
@@ -274,7 +274,7 @@ assert.deepEqual(snowGroup.children.map(r => r.title),
 assert.deepEqual(snowGroup.children.map(r => r.active), [true, true, true, true, false, false, true]);
 const languageRow = languageGroup.children[0];
 assert.equal(languageRow.title, 'Język');
-assert.equal(languageRow.model.items.length, 15);
+assert.equal(languageRow.model.items.length, 16);
 assert.equal(languageRow.model.items[0], 'Automatycznie');
 assert.equal(languageRow.selected, 0);
 languageRow.selected = languageRow.model.items.indexOf('Latina');

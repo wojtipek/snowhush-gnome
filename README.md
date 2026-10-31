@@ -1,6 +1,6 @@
 # Snowhush for GNOME
 
-**English** · [Polski](README.pl.md)
+**English** · [Polski](README.pl.md) · [Русский](README.ru.md)
 
 Soft snow on your GNOME desktop. It settles on the top edges of windows and piles up at the bottom of the screen. The cursor pushes drifts aside, dragged or shaken windows throw their snow off, and closed windows leave lumps that burst into powder.
 
@@ -60,7 +60,7 @@ This removes the extension, the engine and the settings. Nothing is left behind.
 
 The menu follows your system language: Polish (the base language), English (British), Spanish (Mexican), Portuguese (Brazilian), Catalan, German, Czech, Slovak, Ukrainian, Lithuanian, Hungarian, Croatian, Esperanto and Latin. Any other language gets Latin. You can also pick the language yourself under **Options → Language**.
 
-The translations were not written by native speakers. Corrections and new languages are welcome: they all live in one table in [`i18n.js`](extension/snowhush-gnome@wojtipek/i18n.js).
+Most of the translations were not written by native speakers. Corrections and new languages are welcome: they all live in one table in [`i18n.js`](extension/snowhush-gnome@wojtipek/i18n.js).
 
 ## How it works
 

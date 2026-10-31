@@ -1,6 +1,6 @@
 # Snowhush dla GNOME
 
-[English](README.md) · **Polski**
+[English](README.md) · **Polski** · [Русский](README.ru.md)
 
 Śnieg na pulpicie GNOME. Pada spokojnie, osiada na górnych krawędziach okien i usypuje zaspy na dole ekranu. Kursor rozgarnia zaspy, przeciągane albo potrząsane okna zrzucają z siebie śnieg, a zamknięte okna zostawiają grudki, które rozsypują się w puch.
 
@@ -58,9 +58,9 @@ Polecenie usuwa rozszerzenie, silnik i ustawienia. Nic po nich nie zostaje.
 
 ## Języki
 
-Menu jest w języku systemu: polskim (język podstawowy), angielskim (brytyjskim), hiszpańskim (meksykańskim), portugalskim (brazylijskim), katalońskim, niemieckim, czeskim, słowackim, ukraińskim, litewskim, węgierskim, chorwackim, esperanto albo łacinie. Każdy inny język dostaje łacinę. Język można też wybrać samemu: **Opcje** → **Język**.
+Menu jest w języku systemu: polskim (język podstawowy), angielskim (brytyjskim), rosyjskim, hiszpańskim (meksykańskim), portugalskim (brazylijskim), katalońskim, niemieckim, czeskim, słowackim, ukraińskim, litewskim, węgierskim, chorwackim, esperanto albo łacinie. Każdy inny język dostaje łacinę. Język można też wybrać samemu: **Opcje** → **Język**.
 
-Tłumaczeń nie pisali rodzimi użytkownicy tych języków. Poprawki i nowe języki są mile widziane. Wszystkie tłumaczenia są w jednej tabeli w pliku [`i18n.js`](extension/snowhush-gnome@wojtipek/i18n.js).
+Większość tłumaczeń nie została napisana przez rodzimych użytkowników tych języków. Poprawki i nowe języki są mile widziane. Wszystkie tłumaczenia są w jednej tabeli w pliku [`i18n.js`](extension/snowhush-gnome@wojtipek/i18n.js).
 
 ## Dla programistów
 

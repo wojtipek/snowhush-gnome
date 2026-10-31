@@ -13,8 +13,6 @@
 - GNOME Shell 46–51 на **Wayland**
 - Видеокарта с поддержкой OpenGL ES 3 (любой драйвер Intel, AMD или NVIDIA за последние 10 лет)
 
-У других Wayland оболочек есть свои порты: [KDE Plasma](https://github.com/TryCoffee/Snowhush/tree/kde-port) and [Hyprland](https://github.com/Nevers1/snow-hyprland).
-
 ## Установка
 
 Вставьте команду ниже в терминал. Она скачивает последний релиз, устанавливает его и подчищает все следы за собой:

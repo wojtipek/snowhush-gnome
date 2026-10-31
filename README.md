@@ -13,8 +13,6 @@ A port of [Snowhush](https://github.com/mbezruchko/Snowhush) by Mykhailo Bezruch
 - GNOME Shell 46–51 on **Wayland**
 - A GPU with OpenGL ES 3 (any Intel, AMD or NVIDIA driver from the last ten years)
 
-Other Wayland desktops have their own ports: [KDE Plasma](https://github.com/TryCoffee/Snowhush/tree/kde-port) and [Hyprland](https://github.com/Nevers1/snow-hyprland).
-
 ## Install
 
 Paste this into a terminal. It downloads the latest release, installs it and cleans up after itself:

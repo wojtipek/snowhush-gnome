@@ -13,8 +13,6 @@ To port [Snowhusha](https://github.com/mbezruchko/Snowhush) autorstwa Mykhaila B
 - GNOME Shell 46–51 w sesji **Wayland**
 - Karta graficzna z OpenGL ES 3 (każdy sterownik Intela, AMD albo NVIDII z ostatnich dziesięciu lat)
 
-Inne pulpity z Waylandem mają własne porty: [KDE Plasma](https://github.com/TryCoffee/Snowhush/tree/kde-port) i [Hyprland](https://github.com/Nevers1/snow-hyprland).
-
 ## Instalacja
 
 Wklej w terminalu to polecenie. Pobiera najnowsze wydanie, instaluje je i sprząta po sobie:

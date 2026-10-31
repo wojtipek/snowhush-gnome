@@ -45,6 +45,10 @@
       <default>false</default>
       <summary>Ostrzejszy obraz (rysowanie w pełnej rozdzielczości ekranu)</summary>
     </key>
+    <key name="halloween" type="b">
+      <default>true</default>
+      <summary>Halloween: duchy ze śniegu i dynie od 30 października do świtu 1 listopada</summary>
+    </key>
     <key name="language" type="s">
       <default>''</default>
       <summary>Język menu; pusty – język systemu</summary>

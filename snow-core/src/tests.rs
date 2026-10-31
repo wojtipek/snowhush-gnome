@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::geometry::{Rect, V2};
-use crate::simulation::{ScatterPiece, SnowSimulation, Snowfall, Sprite, WindowSurface};
+use crate::simulation::{Pace, ScatterPiece, SnowSimulation, Snowfall, Sprite, WindowSurface};
 
 const DT: f32 = 1.0 / 60.0;
 const AWAY: V2 = V2::new(-10_000.0, -10_000.0);
@@ -124,6 +124,27 @@ fn a_calm_gust_melts_the_drifts_where_they_lie() {
 }
 
 #[test]
+fn a_sliding_desktop_skims_the_drifts_without_blowing_them_away() {
+    let mut simulation = SnowSimulation::new(1280.0, 800.0, Snowfall::Heavy);
+    run(&mut simulation, 90.0, AWAY);
+    simulation.set_snowfall(Snowfall::Off);
+    run(&mut simulation, 15.0, AWAY);
+    let before = piles(&simulation)[0].1;
+    let flying = simulation.sprite_count();
+
+    simulation.space_slid(-9000.0);
+    run(&mut simulation, 0.2, AWAY);
+    assert!(simulation.sprite_count() > flying + 20, "no powder off the crests");
+    assert_eq!(simulation.pace(), Pace::Lively);
+    run(&mut simulation, 4.0, AWAY);
+    let after = piles(&simulation)[0].1;
+    // The last of the snowfall is still landing meanwhile.
+    assert!((after - before).abs() < before * 0.05, "before {before}, after {after}");
+    assert_eq!(simulation.pace(), Pace::Calm);
+    assert_finite(&simulation);
+}
+
+#[test]
 fn snow_settles_on_a_window_and_drops_when_it_closes() {
     let mut simulation = SnowSimulation::new(1280.0, 800.0, Snowfall::Heavy);
     let none = HashSet::new();
@@ -142,6 +163,30 @@ fn snow_settles_on_a_window_and_drops_when_it_closes() {
     run(&mut simulation, 5.0, AWAY);
     assert_eq!(piles(&simulation).len(), 1);
     assert_finite(&simulation);
+}
+
+#[test]
+fn snow_back_from_another_desktop_grows_into_shape() {
+    let mut simulation = SnowSimulation::new(1280.0, 800.0, Snowfall::Heavy);
+    let none = HashSet::new();
+    let window = [surface(7, 300.0, 600.0, 500.0)];
+    simulation.update_windows(&window, 0.2, &none, &none, false);
+    run(&mut simulation, 60.0, AWAY);
+    simulation.set_snowfall(Snowfall::Off);
+    run(&mut simulation, 2.0, AWAY);
+    let ledge = |simulation: &SnowSimulation| piles(simulation).iter().find(|(origin, _)| origin.y > 500.0).map(|ledge| ledge.1);
+    let full = ledge(&simulation).expect("snow on the window");
+
+    simulation.update_windows(&[], 0.2, &none, &HashSet::from([7]), false);
+    run(&mut simulation, 1.0, AWAY);
+    assert_eq!(ledge(&simulation), None, "the snow stayed on screen while its window was away");
+    simulation.update_windows(&window, 0.2, &none, &none, false);
+    simulation.step(DT, AWAY);
+    let first = ledge(&simulation).expect("the snow came back");
+    assert!(first < full * 0.1, "came back whole at once: {first} of {full}");
+    run(&mut simulation, 0.5, AWAY);
+    let grown = ledge(&simulation).expect("the snow stayed");
+    assert!((grown - full).abs() < full * 0.05, "grew to {grown} of {full}");
 }
 
 #[test]
@@ -369,4 +414,27 @@ fn step_cost() {
     }
     let us = start.elapsed().as_secs_f64() * 1e6 / steps as f64;
     println!("rust: {us:.1} µs per step, {} sprites", simulation.sprite_count());
+}
+
+#[test]
+fn halloween_runs_from_october_30_to_dawn_on_november_1() {
+    use crate::halloween::is_halloween;
+    assert!(!is_halloween(10, 29, 23));
+    assert!(is_halloween(10, 30, 0));
+    assert!(is_halloween(10, 31, 0));
+    assert!(is_halloween(10, 31, 23));
+    assert!(is_halloween(11, 1, 5));
+    assert!(!is_halloween(11, 1, 6));
+    assert!(!is_halloween(12, 31, 22));
+}
+
+#[test]
+fn halloween_moonlight_only_shows_on_halloween() {
+    use crate::halloween::{moonlit, night};
+    let light = [1.0, 0.98, 0.95];
+    let tint = [0.5, 0.5, 0.5, 0.35];
+    assert_eq!(moonlit(light, tint, night(false)), (light, tint));
+    let (moon, violet) = moonlit(light, tint, night(true));
+    assert!((moon[2] - 1.0).abs() < 1e-5 && moon[0] < 0.8);
+    assert!((violet[3] - 0.6).abs() < 1e-5);
 }

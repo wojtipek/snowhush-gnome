@@ -29,6 +29,8 @@ const COVER_TYPES = new Set([
 
 const POINTER_INTERVAL_MS = 16;
 
+const SLIDE_SPEED = 6000;
+
 export class Scout {
     constructor(engine) {
         this._engine = engine;
@@ -71,8 +73,13 @@ export class Scout {
             'in-fullscreen-changed', () => this._sendCovered(),
             'workareas-changed', () => this._sendMonitors(),
             this);
+        this._workspace = global.workspace_manager.get_active_workspace_index();
         global.workspace_manager.connectObject('active-workspace-changed', () => {
             this._engine.send('workspace');
+            const index = global.workspace_manager.get_active_workspace_index();
+            if (index !== this._workspace)
+                this._engine.send(`slide ${index > this._workspace ? -SLIDE_SPEED : SLIDE_SPEED}`);
+            this._workspace = index;
             this._sendWindows(true);
         }, this);
         Main.layoutManager.connectObject('monitors-changed', () => this._sendMonitors(), this);

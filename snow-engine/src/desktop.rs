@@ -84,11 +84,12 @@ pub struct Settings {
     pub over_windows: bool,
     pub calm_fps: u32,
     pub sharp: bool,
+    pub halloween: bool,
 }
 
 impl Default for Settings {
     fn default() -> Settings {
-        Settings { snowfall: Snowfall::Steady, accumulate: true, melt: true, snow_on_windows: true, over_windows: true, calm_fps: 20, sharp: false }
+        Settings { snowfall: Snowfall::Steady, accumulate: true, melt: true, snow_on_windows: true, over_windows: true, calm_fps: 20, sharp: false, halloween: true }
     }
 }
 

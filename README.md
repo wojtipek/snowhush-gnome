@@ -43,6 +43,7 @@ The settings window (also under the extension in the *Extensions* app) has:
 - **Snow on windows**, **Flakes over windows** (turn off to keep the flakes behind windows while the snow on their edges stays)
 - **Behind windows**: snow only on the wallpaper
 - **Sharper image**: draws at the full screen resolution instead of the GNOME scale (uses more GPU)
+- **Halloween**: from 30 October until dawn on 1 November, ghosts made of snow rise out of the drifts, jack-o'-lanterns glow in the snow and the cursor carries a candle (on by default)
 - **Language**: automatic (follows the system) or any of the 14 languages below
 
 The snow stops for fullscreen apps, the overview and the lock screen, and gets lighter in power-saver mode.
@@ -73,11 +74,11 @@ GNOME Shell extension                           separate process
   indicator.js  the Snow tile and menu             wl.rs       Wayland client
 ```
 
-- **The engine** (Rust, no external crates) draws the snow into one transparent, click-through window per monitor. It loads the system's libwayland, EGL and OpenGL ES libraries at run time.
+- **The engine** (Rust, no external crates, with its own small PNG decoder) draws the snow into one transparent, click-through window per monitor. It loads the system's libwayland, EGL and OpenGL ES libraries at run time.
 - **The extension** starts the engine as a trusted Wayland client (`Meta.WaylandClient`), so it can recognise the engine's windows. It keeps them above normal windows, out of the window list and off the focus chain, and places them over each monitor's work area.
 - They talk over the engine's standard input, one line of text per command (see [`protocol.rs`](snow-engine/src/protocol.rs)).
 
-`snow-core/` holds `simulation.rs`, `layer.rs`, `geometry.rs` and `tests.rs` from Snowhush's `windows/src`, unchanged. `scripts/sync-upstream.sh` pulls the latest version and runs its tests.
+`snow-core/src` is Snowhush's shared physics (`core/src`), copied unchanged. The Halloween pictures in `snow-engine/assets` and the shaders in `snow-engine/src/shaders` come from Snowhush too; the shaders are adapted to hide the snow behind windows. `scripts/sync-upstream.sh` pulls the latest version and runs its tests.
 
 ## Build from source
 

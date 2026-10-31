@@ -12,6 +12,7 @@ const SWITCHES = [
     ['over-windows', 'Płatki nad oknami'],
     ['behind-windows', 'Za oknami'],
     ['sharp', 'Ostrzejszy obraz'],
+    ['halloween', 'Halloween'],
 ];
 
 export default class SnowhushPreferences extends ExtensionPreferences {

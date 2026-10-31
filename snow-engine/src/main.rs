@@ -4,6 +4,7 @@ mod egl;
 mod ffi;
 mod gl;
 mod light;
+mod png;
 mod protocol;
 mod render;
 mod screen;
@@ -12,6 +13,8 @@ mod wl;
 use std::collections::HashSet;
 use std::io::Write;
 use std::time::{Duration, Instant};
+
+use snow_core::halloween;
 
 use desktop::{Area, Desktop, Monitor, Power, Settings};
 use egl::{Egl, Platform};
@@ -67,6 +70,9 @@ struct App {
     saver: bool,
     system_power: Power,
     light: [f32; 3],
+    season: bool,
+    halloween: bool,
+    night: f32,
     started: Instant,
     chores_at: Instant,
     light_at: Instant,
@@ -94,6 +100,9 @@ fn run(standalone: bool, size: (i32, i32)) -> Result<(), String> {
         saver: false,
         system_power: light::power_from_system(),
         light: light::daylight(),
+        season: light::is_halloween(),
+        halloween: false,
+        night: 0.0,
         started: now,
         chores_at: now,
         light_at: now + Duration::from_secs(60),
@@ -201,6 +210,9 @@ impl App {
             Command::Workspace => {
                 self.screens.iter_mut().for_each(|s| s.simulation.space_changed());
             }
+            Command::Slide(velocity) => {
+                self.screens.iter_mut().for_each(|s| s.simulation.space_slid(velocity));
+            }
             Command::Cursor(position) => {
                 self.desktop.cursor = position;
                 if let Some((x, y)) = position {
@@ -248,10 +260,24 @@ impl App {
                 let direction = self.screens.first().map_or(-1.0, |s| s.simulation.breeze_direction());
                 self.screens.iter_mut().for_each(|s| s.simulation.blow_away(direction, calm));
             }
+            Command::Halloween(on) => {
+                self.settings.halloween = on;
+                self.update_halloween();
+            }
             Command::Pause(on) => self.desktop.paused = on,
             Command::Quit => self.quit = true,
         }
         self.screens.iter_mut().for_each(|s| s.wake(now));
+    }
+
+    fn update_halloween(&mut self) {
+        let wanted = self.season && self.settings.halloween;
+        if wanted != self.halloween {
+            self.halloween = wanted;
+            log!("Halloween: {}", if wanted { "tak" } else { "nie" });
+            self.screens.iter_mut().for_each(|s| s.simulation.set_halloween(wanted));
+        }
+        self.night = halloween::night(wanted);
     }
 
     fn apply_density(&mut self) {
@@ -284,6 +310,9 @@ impl App {
         for screen in &mut kept {
             screen.simulation.walls = desktop::walls(&screen.monitor, &all);
         }
+        for screen in &mut kept {
+            screen.simulation.set_halloween(self.halloween);
+        }
         self.screens = kept;
         self.apply_density();
     }
@@ -298,6 +327,11 @@ impl App {
                 log!("zasilanie: {power:?}");
                 self.apply_density();
             }
+            let season = light::is_halloween();
+            if season != self.season {
+                self.season = season;
+                self.update_halloween();
+            }
             if now >= self.light_at {
                 self.light_at = now + Duration::from_secs(60);
                 self.light = light::daylight();
@@ -311,7 +345,7 @@ impl App {
         let power = self.power();
         for screen in self.screens.iter_mut().filter(|s| s.next_due <= now + tolerance) {
             let began = Instant::now();
-            match screen.frame(&mut self.renderer, &self.egl, &self.desktop, &self.settings, power, self.light, time, now) {
+            match screen.frame(&mut self.renderer, &self.egl, &self.desktop, &self.settings, power, (self.light, self.night), time, now) {
                 Ok(drew) => self.stats.frame(drew, began.elapsed(), screen.simulation.sprite_count(), screen.damaged),
                 Err(error) => {
                     log!("klatka nieudana: {error}");
@@ -391,6 +425,8 @@ fn snapshot(path: &str, seconds: f32) -> Result<(), String> {
 
     let mut simulation = SnowSimulation::new(width as f32, height as f32, Snowfall::Heavy);
     simulation.thaws = false;
+    let spooky = halloween::previewed();
+    simulation.set_halloween(spooky);
     let mut desktop = Desktop::new();
     desktop.windows = vec![
         desktop::Window { id: 1, x: 520, y: 200, width: 360, height: 240, flags: desktop::FLAG_ROUNDED },
@@ -406,10 +442,20 @@ fn snapshot(path: &str, seconds: f32) -> Result<(), String> {
     for i in 0..60 {
         simulation.step(dt, V2::new(300.0 + i as f32 * 6.0, 6.0));
     }
+    if spooky {
+        for _ in 0..(20.0 / dt) as usize {
+            simulation.step(dt, screen::AWAY);
+        }
+    }
     for _ in 0..10 {
         simulation.step(dt, screen::AWAY);
     }
-    let ambient = render::Ambient { light: light::daylight_at(12.0), shadow_tint: [0.0; 4] };
+    let ambient = render::Ambient {
+        light: light::daylight_at(12.0),
+        shadow_tint: [0.0; 4],
+        night: halloween::night(spooky),
+        lantern: V2::new(width as f32 * 0.75, 40.0),
+    };
     let masks = if std::env::var_os("SNOWHUSH_BEHIND").is_some() { desktop.masks(&area, (width as f32, height as f32)) } else { Vec::new() };
     renderer.draw(&simulation, (width, height), 1.0, ambient, 3.0, &masks)?;
     let mut pixels = vec![0u8; (width * height * 4) as usize];

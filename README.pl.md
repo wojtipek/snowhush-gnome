@@ -58,7 +58,7 @@ Polecenie usuwa rozszerzenie, silnik i ustawienia. Nic po nich nie zostaje.
 
 ## Języki
 
-Menu jest w języku systemu: polskim (język podstawowy), angielskim (brytyjskim), rosyjski, hiszpańskim (meksykańskim), portugalskim (brazylijskim), katalońskim, niemieckim, czeskim, słowackim, ukraińskim, litewskim, węgierskim, chorwackim, esperanto albo łacinie. Każdy inny język dostaje łacinę. Język można też wybrać samemu: **Opcje** → **Język**.
+Menu jest w języku systemu: polskim (język podstawowy), angielskim (brytyjskim), rosyjskim, hiszpańskim (meksykańskim), portugalskim (brazylijskim), katalońskim, niemieckim, czeskim, słowackim, ukraińskim, litewskim, węgierskim, chorwackim, esperanto albo łacinie. Każdy inny język dostaje łacinę. Język można też wybrać samemu: **Opcje** → **Język**.
 
 Większość tłumaczeń nie została napisana przez rodzimych użytkowników tych języków. Poprawki i nowe języki są mile widziane. Wszystkie tłumaczenia są w jednej tabeli w pliku [`i18n.js`](extension/snowhush-gnome@wojtipek/i18n.js).
 

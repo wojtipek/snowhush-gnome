@@ -210,6 +210,9 @@ impl App {
             Command::Workspace => {
                 self.screens.iter_mut().for_each(|s| s.simulation.space_changed());
             }
+            Command::Slide(velocity) => {
+                self.screens.iter_mut().for_each(|s| s.simulation.space_slid(velocity));
+            }
             Command::Cursor(position) => {
                 self.desktop.cursor = position;
                 if let Some((x, y)) = position {

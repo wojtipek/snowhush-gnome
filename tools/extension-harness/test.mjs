@@ -54,7 +54,7 @@ let actors = [];
 globalThis.global = {
     display,
     context: {},
-    workspace_manager: Object.assign(new Emitter(), {get_active_workspace: () => workspaces[activeWorkspace]}),
+    workspace_manager: Object.assign(new Emitter(), {get_active_workspace: () => workspaces[activeWorkspace], get_active_workspace_index: () => activeWorkspace}),
     compositor: {get_laters: () => ({add(type, fn) { laters.push(fn); return laters.length; }, remove() {}})},
     get_window_actors: () => actors,
     get_pointer: () => [100, 200],
@@ -150,11 +150,12 @@ activeWorkspace = 1;
 global.workspace_manager.emit('active-workspace-changed');
 lines = sent();
 assert.equal(lines[0], 'workspace');
+assert.ok(lines.includes('slide -6000'), `wiatr w lewo przy przejściu w prawo: ${lines}`);
 assert.ok(lines.some(l => l.startsWith('windows 0 4:')), `okna nowego obszaru: ${lines}`);
 assert.ok(lines.includes('elsewhere 2 1 3'), `stare okna „gdzie indziej”: ${lines}`);
 activeWorkspace = 0;
 global.workspace_manager.emit('active-workspace-changed');
-sent();
+assert.ok(sent().includes('slide 6000'), 'wiatr w prawo przy powrocie');
 
 scout.setSwitching(true);
 lines = sent();

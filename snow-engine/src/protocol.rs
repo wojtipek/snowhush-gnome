@@ -19,6 +19,7 @@ pub enum Command {
     Power(Power),
     ClearSnow(bool),
     Halloween(bool),
+    Slide(f32),
     Pause(bool),
     Quit,
 }
@@ -42,6 +43,7 @@ pub fn parse(line: &str) -> Result<Command, String> {
         }
         "elsewhere" => rest.iter().map(|id| id.parse().map_err(|_| bad())).collect::<Result<_, _>>().map(Command::Elsewhere),
         "workspace" => Ok(Command::Workspace),
+        "slide" => rest.first().and_then(|v| v.parse::<f32>().ok()).filter(|v| v.is_finite()).map(Command::Slide).ok_or_else(bad),
         "cursor" => match rest.as_slice() {
             ["none"] => Ok(Command::Cursor(None)),
             [x, y] => Ok(Command::Cursor(Some((x.parse().map_err(|_| bad())?, y.parse().map_err(|_| bad())?)))),
@@ -129,6 +131,8 @@ mod tests {
         );
         assert_eq!(parse("clear 0").unwrap(), Command::ClearSnow(false));
         assert_eq!(parse("set halloween 0").unwrap(), Command::Halloween(false));
+        assert_eq!(parse("slide -6000").unwrap(), Command::Slide(-6000.0));
+        assert!(parse("slide nan").is_err());
         assert_eq!(parse("clear 1").unwrap(), Command::ClearSnow(true));
         assert_eq!(parse("windows 0").unwrap(), Command::Windows { moving: false, list: vec![] });
         assert_eq!(parse("elsewhere 3 4").unwrap(), Command::Elsewhere(vec![3, 4]));

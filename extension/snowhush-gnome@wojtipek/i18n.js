@@ -27,7 +27,7 @@ export const TRANSLATIONS = {
         'Behind windows', 'Sharper image', 'Language', 'Automatic', 'Options', 'Halloween'],
     ru: ['Снег', 'Snowhush для GNOME', 'Отключить', 'Легкий', 'Средний', 'Мощный', 'Разнообразный',
         'Сдуть снег', 'Сугробы', 'Таяние', 'Снег на окнах', 'Снежинки поверх окон',
-        'Позади окон', 'Повышенная чёткость', 'Язык', 'Автоматически', 'Настройки', "Хеллоуин"],
+        'Позади окон', 'Повышенная чёткость', 'Язык', 'Автоматически', 'Настройки', 'Хеллоуин'],
     es: ['Nieve', 'Snowhush para GNOME', 'Sin nevada', 'Ligera', 'Moderada', 'Intensa', 'Variable',
         'Soplar la nieve', 'Acumulación', 'Deshielo', 'Nieve en las ventanas', 'Copos sobre las ventanas',
         'Detrás de las ventanas', 'Imagen más nítida', 'Idioma', 'Automático', 'Opciones', 'Halloween'],

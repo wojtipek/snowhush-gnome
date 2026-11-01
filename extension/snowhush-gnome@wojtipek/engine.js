@@ -8,6 +8,8 @@ const TITLE_PATTERN = /^snowhush-overlay-(\d+)$/;
 const APP_ID = 'org.snowhush.Overlay';
 const LATEST_ONLY = new Set(['monitors', 'windows', 'elsewhere', 'cursor', 'covered', 'power']);
 const MAX_RESTARTS = 5;
+const MAX_CORRECTIONS = 5;
+const CORRECTION_WINDOW_US = 2 * 1000 * 1000;
 
 function log(message) {
     console.log(`snowhush-gnome: ${message}`);
@@ -246,6 +248,8 @@ export class Engine {
         const signals = [
             window.connect('notify::title', () => this._readIndex(window)),
             window.connect('shown', () => this._position(window)),
+            window.connect('size-changed', () => this._correct(window)),
+            window.connect('position-changed', () => this._correct(window)),
             window.connect('unmanaged', () => this._forgetWindow(window)),
         ];
         this._windowSignals.set(window, signals);
@@ -261,6 +265,7 @@ export class Engine {
         }
         this._windowSignals.delete(window);
         this._overlays.delete(window);
+        this._corrections?.delete(window);
     }
 
     _readIndex(window) {
@@ -305,12 +310,27 @@ export class Engine {
     _position(window) {
         const index = this._overlays.get(window);
         if (index === undefined || index < 0 || index >= Main.layoutManager.monitors.length)
-            return;
+            return false;
         const area = Main.layoutManager.getWorkAreaForMonitor(index);
         const frame = window.get_frame_rect();
         if (frame.x === area.x && frame.y === area.y && frame.width === area.width && frame.height === area.height)
-            return;
+            return false;
         window.move_resize_frame(false, area.x, area.y, area.width, area.height);
+        return true;
+    }
+
+    _correct(window) {
+        const now = GLib.get_monotonic_time();
+        const corrections = this._corrections ??= new Map();
+        let tries = corrections.get(window);
+        if (!tries || now - tries.since >= CORRECTION_WINDOW_US)
+            tries = {since: now, count: 0};
+        if (tries.count >= MAX_CORRECTIONS)
+            return;
+        if (this._position(window)) {
+            tries.count++;
+            corrections.set(window, tries);
+        }
     }
 
     _positionAll() {

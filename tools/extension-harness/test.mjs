@@ -202,6 +202,18 @@ Main.layoutManager.getWorkAreaForMonitor = i => ({x: 1920, y: 40, width: 2500, h
 display.emit('workareas-changed');
 assert.deepEqual(overlay.moves.at(-1), [1920, 40, 2500, 1400]);
 
+overlay.rect = {x: 1920, y: 0, width: 2500, height: 1400};
+const movesBefore = overlay.moves.length;
+overlay.emit('size-changed');
+assert.deepEqual(overlay.moves.at(-1), [1920, 40, 2500, 1400], 'nakładka poprawiona po niedokończonym przesunięciu');
+overlay.emit('position-changed');
+assert.equal(overlay.moves.length, movesBefore + 1, 'na miejscu: bez kolejnych przesunięć');
+overlay.move_resize_frame = function (u, x, y, w, h) { this.moves.push([x, y, w, h]); };
+for (let k = 0; k < 20; k++)
+    overlay.emit('position-changed');
+assert.ok(overlay.moves.length <= movesBefore + 1 + 5, `ogranicznik prób: ${overlay.moves.length - movesBefore}`);
+delete overlay.move_resize_frame;
+
 const first = globalThis.lastProcess;
 first._wait(first, null);
 assert.equal(globalThis.timeouts.length, 1, 'zaplanowany restart');

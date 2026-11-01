@@ -37,6 +37,7 @@ pub struct Screen {
     waiting_since: Option<Instant>,
     postponed_from: Option<Instant>,
     hidden: bool,
+    must_draw: bool,
 }
 
 impl Screen {
@@ -70,6 +71,7 @@ impl Screen {
             waiting_since: None,
             postponed_from: None,
             hidden: false,
+            must_draw: false,
         };
         screen.apply_sharpness(settings.sharp);
         Ok(screen)
@@ -103,6 +105,9 @@ impl Screen {
                 self.windows_seen = 0;
             }
             self.damage.invalidate();
+            self.must_draw = true;
+            self.waiting_since = None;
+            self.postponed_from = None;
             self.wake(Instant::now());
         }
     }
@@ -160,7 +165,7 @@ impl Screen {
             }
         }
         if covered {
-            if !self.cleared {
+            if !self.cleared || std::mem::take(&mut self.must_draw) {
                 egl.make_current(self.surface)?;
                 renderer.clear(self.window.buffer_size());
                 egl.swap(self.surface)?;
@@ -198,7 +203,7 @@ impl Screen {
         let near = |p: V2| p.x > -reach && p.x < width + reach && p.y > -reach && p.y < height + reach;
         let lantern_moved = night > 0.0 && (cursor - self.lantern).length() > 0.5 && (near(cursor) || near(self.lantern));
         self.lantern = cursor;
-        changed |= lantern_moved;
+        changed |= lantern_moved || std::mem::take(&mut self.must_draw);
 
         let mut fastest: u32 = 60;
         let mut calm = if power == Power::Saver { settings.calm_fps.min(24) } else { settings.calm_fps };

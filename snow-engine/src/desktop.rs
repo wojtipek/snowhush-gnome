@@ -113,6 +113,7 @@ pub struct Settings {
     pub idle_slowdown: bool,
     pub rest_when_hidden: bool,
     pub battery_slowdown: bool,
+    pub autumn: bool,
 }
 
 impl Default for Settings {
@@ -129,6 +130,7 @@ impl Default for Settings {
             idle_slowdown: false,
             rest_when_hidden: false,
             battery_slowdown: false,
+            autumn: false,
         }
     }
 }

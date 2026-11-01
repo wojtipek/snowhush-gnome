@@ -51,6 +51,7 @@ impl Screen {
         let mut simulation = SnowSimulation::new(size.0 as f32, size.1 as f32, settings.snowfall);
         simulation.thaws = settings.melt;
         simulation.accumulates = settings.accumulate;
+        simulation.set_autumn(settings.autumn);
         crate::log!("monitor {}: obszar {:?}, skala {}", monitor.index, monitor.area, monitor.scale);
         let mut screen = Screen {
             monitor,

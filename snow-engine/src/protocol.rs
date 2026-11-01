@@ -21,6 +21,8 @@ pub enum Command {
     Halloween(bool),
     Slide(f32),
     Idle(bool),
+    Mode { autumn: bool, calm: bool },
+    Autumn(bool),
     IdleSlowdown(bool),
     RestWhenHidden(bool),
     BatterySlowdown(bool),
@@ -70,6 +72,7 @@ pub fn parse(line: &str) -> Result<Command, String> {
             ["idle-slowdown", _] => flag(rest.get(1)).map(Command::IdleSlowdown),
             ["rest-when-hidden", _] => flag(rest.get(1)).map(Command::RestWhenHidden),
             ["battery-slowdown", _] => flag(rest.get(1)).map(Command::BatterySlowdown),
+            ["autumn", _] => flag(rest.get(1)).map(Command::Autumn),
             _ => Err(bad()),
         },
         "power" => match rest.as_slice() {
@@ -79,6 +82,17 @@ pub fn parse(line: &str) -> Result<Command, String> {
         },
         "clear" => flag(rest.first()).map(Command::ClearSnow),
         "idle" => flag(rest.first()).map(Command::Idle),
+        "mode" => match rest[..] {
+            [mode, calm] => {
+                let autumn = match mode {
+                    "autumn" => true,
+                    "snow" => false,
+                    _ => return Err(bad()),
+                };
+                flag(Some(&calm)).map(|calm| Command::Mode { autumn, calm })
+            }
+            _ => Err(bad()),
+        },
         "pause" => flag(rest.first()).map(Command::Pause),
         "quit" => Ok(Command::Quit),
         _ => Err(bad()),
@@ -141,6 +155,10 @@ mod tests {
         assert_eq!(parse("set halloween 0").unwrap(), Command::Halloween(false));
         assert_eq!(parse("slide -6000").unwrap(), Command::Slide(-6000.0));
         assert_eq!(parse("idle 1").unwrap(), Command::Idle(true));
+        assert_eq!(parse("mode autumn 0").unwrap(), Command::Mode { autumn: true, calm: false });
+        assert_eq!(parse("mode snow 1").unwrap(), Command::Mode { autumn: false, calm: true });
+        assert!(parse("mode winter 0").is_err());
+        assert_eq!(parse("set autumn 1").unwrap(), Command::Autumn(true));
         assert_eq!(parse("set idle-slowdown 1").unwrap(), Command::IdleSlowdown(true));
         assert_eq!(parse("set rest-when-hidden 0").unwrap(), Command::RestWhenHidden(false));
         assert_eq!(parse("set battery-slowdown 1").unwrap(), Command::BatterySlowdown(true));

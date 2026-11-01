@@ -112,7 +112,7 @@ impl Renderer {
                 &gl,
                 SPRITE_VERTEX,
                 SPRITE_FRAGMENT,
-                &["viewSize", "scale", "time", "light", "shadowTint", "rim", "lantern", "pumpkins", "shake", "panel", "masks", "maskCount"],
+                &["viewSize", "scale", "time", "light", "shadowTint", "rim", "lantern", "pumpkins", "shake", "panel", "masks", "maskCount", "autumn"],
             )?;
             let pile = program(
                 &gl,
@@ -140,6 +140,8 @@ impl Renderer {
                     "panel",
                     "masks",
                     "maskCount",
+                    "autumn",
+                    "drift",
                 ],
             )?;
             let sign = program(
@@ -165,8 +167,21 @@ impl Renderer {
             (gl.BindVertexArray)(vaos[0]);
             (gl.BindBuffer)(gl::ARRAY_BUFFER, buffer);
             let stride = size_of::<Sprite>() as i32;
-            let attributes: [(u32, i32, usize); 11] =
-                [(0, 2, 0), (1, 2, 8), (2, 1, 16), (3, 1, 20), (4, 1, 24), (5, 1, 28), (6, 3, 32), (7, 1, 44), (8, 4, 48), (9, 4, 64), (10, 2, 80)];
+            let attributes: [(u32, i32, usize); 13] = [
+                (0, 2, 0),
+                (1, 2, 8),
+                (2, 1, 16),
+                (3, 1, 20),
+                (4, 1, 24),
+                (5, 1, 28),
+                (6, 3, 32),
+                (7, 1, 44),
+                (8, 4, 48),
+                (9, 4, 64),
+                (10, 2, 80),
+                (11, 3, 88),
+                (12, 2, 100),
+            ];
             for (location, size, offset) in attributes {
                 (gl.EnableVertexAttribArray)(location);
                 (gl.VertexAttribPointer)(location, size, gl::FLOAT, 0, stride, offset as *const c_void);
@@ -255,6 +270,7 @@ impl Renderer {
         let shake = simulation.shake();
         let shake = [shake.x, shake.y];
         let panel = [0.0f32; 4];
+        let autumn = if simulation.autumn() { 1.0 } else { 0.0 };
 
         let gl = &self.gl;
         unsafe {
@@ -275,6 +291,7 @@ impl Renderer {
                 (gl.Uniform4fv)(p.at("rim"), 1, rim.as_ptr());
                 (gl.Uniform4fv)(p.at("shadowTint"), 1, shadow_tint.as_ptr());
                 (gl.Uniform1f)(p.at("scale"), scale);
+                (gl.Uniform1f)(p.at("autumn"), autumn);
             };
             let set_masks = |p: &Program, on: bool| {
                 let count = if on { masks.len() } else { 0 };
@@ -336,6 +353,7 @@ impl Renderer {
                     (gl.Uniform1f)(p.at("pileTop"), pile.top + 2.0);
                     (gl.Uniform1f)(p.at("pileBottom"), pile.bottom);
                     (gl.Uniform2f)(p.at("origin"), pile.origin.x, pile.origin.y);
+                    (gl.Uniform1f)(p.at("drift"), pile.drift);
                     (gl.Uniform1i)(p.at("heightOffset"), pile.offset as i32);
                     (gl.Uniform1i)(p.at("occluderCount"), occluders as i32);
                     if occluders > 0 {

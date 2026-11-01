@@ -14,7 +14,7 @@ export default class SnowhushExtension extends Extension {
         this._engine = new Engine(`${this.path}/bin/snowhush-engine`, () => this._onEngineStarted());
         this._scout = new Scout(this._engine);
         this._watchWorkspaceAnimation();
-        this._indicator = new SnowIndicator(this._settings, () => this._clearSnow(), () => this.openPreferences());
+        this._indicator = new SnowIndicator(this._settings, () => this._clearSnow(), () => this.openPreferences(), this.path);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
 
         this._settings.connectObject('changed', (_settings, key) => this._settingChanged(key), this);
@@ -109,6 +109,7 @@ export default class SnowhushExtension extends Extension {
         this._engine.send(`set sharp ${s.get_boolean('sharp') ? 1 : 0}`);
         this._engine.send(`set calm-fps ${s.get_int('calm-fps')}`);
         this._engine.send(`set halloween ${s.get_boolean('halloween') ? 1 : 0}`);
+        this._engine.send(`set autumn ${s.get_boolean('autumn') ? 1 : 0}`);
         if (this._running && this._scoutRunning)
             this._scout.sendAll();
     }
@@ -125,6 +126,11 @@ export default class SnowhushExtension extends Extension {
         case 'snowfall':
             this._engine.send(`set snowfall ${s.get_string('snowfall')}`);
             break;
+        case 'autumn': {
+            const calm = !St.Settings.get().enable_animations;
+            this._engine.send(`mode ${s.get_boolean('autumn') ? 'autumn' : 'snow'} ${calm ? 1 : 0}`);
+            break;
+        }
         case 'calm-fps':
             this._engine.send(`set calm-fps ${s.get_int('calm-fps')}`);
             break;

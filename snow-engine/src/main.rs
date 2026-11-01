@@ -266,6 +266,15 @@ impl App {
                 self.update_halloween();
             }
             Command::Idle(on) => self.desktop.idle = on,
+            Command::Mode { autumn, calm } => {
+                self.settings.autumn = autumn;
+                let direction = self.screens.first().map_or(-1.0, |s| s.simulation.breeze_direction());
+                self.screens.iter_mut().for_each(|s| s.simulation.switch_mode(autumn, direction, calm));
+            }
+            Command::Autumn(on) => {
+                self.settings.autumn = on;
+                self.screens.iter_mut().for_each(|s| s.simulation.set_autumn(on));
+            }
             Command::IdleSlowdown(on) => self.settings.idle_slowdown = on,
             Command::RestWhenHidden(on) => self.settings.rest_when_hidden = on,
             Command::BatterySlowdown(on) => self.settings.battery_slowdown = on,

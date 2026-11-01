@@ -31,8 +31,9 @@ Everything goes into one folder, `~/.local/share/gnome-shell/extensions/snowhush
 
 Open **Quick Settings** (top-right corner, where Wi-Fi and Bluetooth are) and find the **Snow** tile. Clicking the tile turns the snow on and off, and the arrow next to it opens the menu:
 
+- **Snow** or **Autumn leaves**: leaves can fall instead of snow. On a switch, a gust clears what is lying around, then the other kind starts falling from the top. The tile is then called **Leaves** and shows a leaf icon
 - **Snowfall**: no snowfall, light, moderate, heavy or variable
-- **Blow the snow away**: a gust clears all the snow, including snow on windows on other workspaces
+- **Blow the snow away** (or **Blow the leaves away**): a gust clears all the snow, including snow on windows on other workspaces
 - **Options**: opens the settings window
 
 The settings window (also under the extension in the *Extensions* app) has:

@@ -257,6 +257,7 @@ class FakeSettings extends Emitter {
     constructor(values) { super(); this.values = values; }
     get_string(k) { return this.values[k]; }
     get_boolean(k) { return this.values[k]; }
+    get_int(k) { return this.values[k]; }
     set_string(k, v) { this.values[k] = v; this._changed(k); }
     set_boolean(k, v) { this.values[k] = v; this._changed(k); }
     _changed(k) {
@@ -271,18 +272,38 @@ class FakeSettings extends Emitter {
 }
 const menuSettings = new FakeSettings({enabled: true, snowfall: 'heavy', language: '', accumulate: true, melt: true,
     'snow-on-windows': true, 'over-windows': true, 'behind-windows': false, sharp: false, halloween: true,
-    'idle-slowdown': false, 'rest-when-hidden': false, 'battery-slowdown': false});
+    'idle-slowdown': false, 'rest-when-hidden': false, 'battery-slowdown': false, autumn: false});
 let cleared = 0, opened = 0;
 const {SnowIndicator} = await import(`${EXT}/indicator.js`);
-const indicator = new SnowIndicator(menuSettings, () => cleared++, () => opened++);
+const indicator = new SnowIndicator(menuSettings, () => cleared++, () => opened++, '/ext');
 const toggle = indicator.quickSettingsItems[0];
 const menuItems = () => toggle.menu.items.flatMap(i => i.items?.length ? i.items : [i]).filter(i => i.label);
 const labels = () => menuItems().map(i => i.label.text);
 const item = text => menuItems().find(i => i.label.text === text);
-assert.deepEqual(labels(), ['Bez opadów', 'Lekki', 'Umiarkowany', 'Gęsty', 'Zmienny', 'Zdmuchnij śnieg', 'Opcje']);
+assert.deepEqual(labels(), ['Śnieg', 'Jesienne liście', 'Bez opadów', 'Lekki', 'Umiarkowany', 'Gęsty', 'Zmienny', 'Zdmuchnij śnieg', 'Opcje']);
 assert.equal(toggle.title, 'Śnieg');
 assert.equal(toggle.subtitle, 'Gęsty');
-assert.deepEqual(toggle.menu.header, ['weather-snow-symbolic', 'Śnieg', 'Snowhush dla GNOME']);
+assert.equal(toggle.gicon.name, 'weather-snow-symbolic');
+assert.deepEqual(toggle.menu.header.slice(1), ['Śnieg', 'Snowhush dla GNOME']);
+assert.equal(toggle.menu.header[0].name, 'weather-snow-symbolic');
+assert.equal(menuItems()[0].ornament, 2);
+assert.equal(menuItems()[1].ornament, 3);
+item('Jesienne liście').activate();
+assert.equal(menuSettings.values.autumn, true);
+assert.equal(toggle.title, 'Liście');
+assert.equal(toggle.gicon.file.path, '/ext/icons/leaf-symbolic.svg');
+assert.equal(toggle.menu.header[1], 'Liście');
+assert.equal(menuItems()[0].ornament, 3);
+assert.equal(menuItems()[1].ornament, 2);
+assert.ok(labels().includes('Zdmuchnij liście') && !labels().includes('Zdmuchnij śnieg'));
+menuSettings.set_string('language', 'de');
+assert.equal(toggle.title, 'Laub');
+assert.ok(labels().includes('Herbstlaub') && labels().includes('Laub wegpusten'), `${labels()}`);
+menuSettings.set_string('language', '');
+item('Śnieg').activate();
+assert.equal(menuSettings.values.autumn, false);
+assert.equal(toggle.title, 'Śnieg');
+assert.equal(toggle.gicon.name, 'weather-snow-symbolic');
 item('Lekki').activate();
 assert.equal(menuSettings.values.snowfall, 'light');
 assert.equal(toggle.subtitle, 'Lekki');
@@ -337,5 +358,27 @@ snowGroup.children[0].active = false;
 menuSettings.set_boolean('enabled', false);
 assert.equal(toggle.subtitle, null);
 assert.equal(item('Zdmuchnij śnieg').sensitive, false);
+
+const {TRANSLATIONS} = await import(`${EXT}/i18n.js`);
+for (const [code, list] of Object.entries(TRANSLATIONS))
+    assert.equal(list.length, 24, `pełne tłumaczenie: ${code}`);
+
+const {default: SnowhushExtension} = await import(`${EXT}/extension.js`);
+const extSettings = new FakeSettings({...menuSettings.values, 'calm-fps': 20, enabled: false, autumn: true});
+const ext = new SnowhushExtension({path: '/ext'});
+ext.getSettings = () => extSettings;
+ext.enable();
+const extSent = [];
+ext._engine = {send: line => extSent.push(line), start() {}, stop() {}, setBehindWindows() {}, destroy() {}};
+ext._onEngineStarted();
+assert.ok(extSent.includes('set autumn 1'), 'start od razu w liściach, bez podmuchu');
+assert.ok(!extSent.some(l => l.startsWith('mode')));
+extSent.length = 0;
+extSettings.set_boolean('autumn', false);
+assert.deepEqual(extSent, ['mode snow 0']);
+(await import('./mocks/gi-St.mjs')).default.Settings.get().enable_animations = false;
+extSettings.set_boolean('autumn', true);
+assert.deepEqual(extSent, ['mode snow 0', 'mode autumn 1']);
+ext.disable();
 
 console.log('rozszerzenie: wszystkie testy przeszły');

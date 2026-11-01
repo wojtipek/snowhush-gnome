@@ -31,8 +31,9 @@ Wszystko trafia do jednego folderu: `~/.local/share/gnome-shell/extensions/snowh
 
 Otwórz **Szybkie ustawienia** (prawy górny róg, tam gdzie Wi-Fi i Bluetooth) i znajdź kafelek **Śnieg**. Kliknięcie kafelka włącza i wyłącza śnieg, a strzałka obok otwiera menu:
 
+- **Śnieg** albo **Jesienne liście**: zamiast śniegu mogą spadać liście. Przy zmianie podmuch zwiewa to, co leży, a potem z góry zaczyna padać to drugie. Kafelek nazywa się wtedy **Liście** i ma ikonę liścia
 - **Opady**: bez opadów, lekki, umiarkowany, gęsty albo zmienny
-- **Zdmuchnij śnieg**: podmuch wiatru zwiewa cały śnieg, także z okien na innych obszarach roboczych
+- **Zdmuchnij śnieg** (albo **Zdmuchnij liście**): podmuch wiatru zwiewa cały śnieg, także z okien na innych obszarach roboczych
 - **Opcje**: otwiera okno ustawień
 
 W oknie ustawień (dostępnym też przy rozszerzeniu w aplikacji *Rozszerzenia*) są:

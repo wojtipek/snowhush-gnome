@@ -265,6 +265,10 @@ impl App {
                 self.settings.halloween = on;
                 self.update_halloween();
             }
+            Command::Idle(on) => self.desktop.idle = on,
+            Command::IdleSlowdown(on) => self.settings.idle_slowdown = on,
+            Command::RestWhenHidden(on) => self.settings.rest_when_hidden = on,
+            Command::BatterySlowdown(on) => self.settings.battery_slowdown = on,
             Command::Pause(on) => self.desktop.paused = on,
             Command::Quit => self.quit = true,
         }
@@ -348,6 +352,7 @@ impl App {
         let time = (now.duration_since(self.started).as_secs_f64() % 1000.0) as f32;
         let tolerance = Duration::from_millis(2);
         let power = self.power();
+        self.screens.iter_mut().for_each(Screen::check_frame_callback);
         for screen in self.screens.iter_mut().filter(|s| s.next_due <= now + tolerance) {
             let began = Instant::now();
             match screen.frame(&mut self.renderer, &self.egl, &self.desktop, &self.settings, power, (self.light, self.night), time, now) {

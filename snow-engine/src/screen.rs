@@ -12,6 +12,10 @@ use crate::wl::{Wayland, WlWindow};
 
 pub const AWAY: V2 = V2::new(-10_000.0, -10_000.0);
 const REST: Duration = Duration::from_secs(1);
+const FRAME_WAIT: Duration = Duration::from_secs(1);
+const IDLE_FPS: u32 = 10;
+const BATTERY_CALM_FPS: u32 = 15;
+const BATTERY_FASTEST_FPS: u32 = 30;
 pub const APP_ID: &str = "org.snowhush.Overlay";
 
 pub struct Screen {
@@ -30,6 +34,9 @@ pub struct Screen {
     damage: Damage,
     pub damaged: f32,
     lantern: V2,
+    waiting_since: Option<Instant>,
+    postponed_from: Option<Instant>,
+    hidden: bool,
 }
 
 impl Screen {
@@ -60,6 +67,9 @@ impl Screen {
             damage: Damage::new(),
             damaged: 0.0,
             lantern: AWAY,
+            waiting_since: None,
+            postponed_from: None,
+            hidden: false,
         };
         screen.apply_sharpness(settings.sharp);
         Ok(screen)
@@ -102,6 +112,15 @@ impl Screen {
         wayland.destroy_window(self.window);
     }
 
+    pub fn check_frame_callback(&mut self) {
+        if self.waiting_since.is_some() && !self.window.frame_pending() {
+            self.waiting_since = None;
+            if let Some(planned) = self.postponed_from.take() {
+                self.next_due = planned;
+            }
+        }
+    }
+
     pub fn wake(&mut self, now: Instant) {
         self.next_due = self.next_due.min(now);
     }
@@ -127,7 +146,12 @@ impl Screen {
             self.next_due = now + Duration::from_millis(100);
             return Ok(false);
         }
-        let covered = desktop.covered(self.monitor.index);
+        let hidden = settings.rest_when_hidden && !settings.over_windows && desktop.top_covers(&self.monitor.area);
+        if hidden != self.hidden {
+            crate::log!("monitor {}: {}", self.monitor.index, if hidden { "śnieg zasłonięty oknem" } else { "śnieg znów widoczny" });
+            self.hidden = hidden;
+        }
+        let covered = desktop.covered(self.monitor.index) || hidden;
         if covered != self.covered {
             crate::log!("monitor {}: {}", self.monitor.index, if covered { "zasłonięty" } else { "odsłonięty" });
             self.covered = covered;
@@ -145,6 +169,16 @@ impl Screen {
             }
             self.next_due = now + Duration::from_millis(250);
             return Ok(false);
+        }
+
+        if let Some(since) = self.waiting_since {
+            if now.duration_since(since) < FRAME_WAIT {
+                self.postponed_from = Some(self.postponed_from.map_or(self.next_due, |p| p.min(self.next_due)));
+                self.next_due = since + FRAME_WAIT;
+                return Ok(false);
+            }
+            self.waiting_since = None;
+            self.postponed_from = None;
         }
 
         let elapsed = self.last_step.map_or(1.0 / 60.0, |last| now.duration_since(last).as_secs_f32().min(0.25));
@@ -166,12 +200,19 @@ impl Screen {
         self.lantern = cursor;
         changed |= lantern_moved;
 
-        let fastest: u32 = 60;
-        let calm = if power == Power::Saver { settings.calm_fps.min(24) } else { settings.calm_fps };
-        let rate = match self.simulation.pace() {
+        let mut fastest: u32 = 60;
+        let mut calm = if power == Power::Saver { settings.calm_fps.min(24) } else { settings.calm_fps };
+        if settings.battery_slowdown && power != Power::Full {
+            calm = calm.min(BATTERY_CALM_FPS);
+            fastest = fastest.min(BATTERY_FASTEST_FPS);
+        }
+        let mut rate = match self.simulation.pace() {
             Pace::Calm if !lantern_moved => calm,
             _ => fastest.max(calm),
         };
+        if settings.idle_slowdown && desktop.idle {
+            rate = rate.min(IDLE_FPS);
+        }
         self.next_due = now + Duration::from_secs_f64(1.0 / rate as f64);
         if self.simulation.is_empty() {
             self.next_due = now + REST;
@@ -205,7 +246,9 @@ impl Screen {
         } else {
             self.damage.compute(size, scale, renderer.sprites(drawn.sprites), &drawn.piles)
         };
+        self.window.request_frame();
         egl.swap_damaged(self.surface, rects.as_deref())?;
+        self.waiting_since = Some(now);
         self.damaged = self.damage.last_fraction;
         Ok(true)
     }

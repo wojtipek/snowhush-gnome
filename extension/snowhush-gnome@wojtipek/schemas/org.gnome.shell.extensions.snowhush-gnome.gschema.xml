@@ -49,6 +49,18 @@
       <default>true</default>
       <summary>Halloween: duchy ze śniegu i dynie od 30 października do świtu 1 listopada</summary>
     </key>
+    <key name="idle-slowdown" type="b">
+      <default>false</default>
+      <summary>Po 5 minutach bezczynności śnieg zwalnia do 10 klatek na sekundę</summary>
+    </key>
+    <key name="rest-when-hidden" type="b">
+      <default>false</default>
+      <summary>Śnieg zatrzymuje się, gdy okno zasłania cały ekran, a płatki są za oknami</summary>
+    </key>
+    <key name="battery-slowdown" type="b">
+      <default>false</default>
+      <summary>Na baterii mniej klatek na sekundę (15 przy spokojnym padaniu, najwyżej 30)</summary>
+    </key>
     <key name="language" type="s">
       <default>''</default>
       <summary>Język menu; pusty – język systemu</summary>

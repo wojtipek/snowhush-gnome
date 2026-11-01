@@ -51,7 +51,16 @@ const fullscreen = new Set();
 const workspaces = [{index: 0}, {index: 1}];
 let activeWorkspace = 0;
 let actors = [];
+const idleMonitor = {
+    watches: new Map(), next: 1,
+    get_idletime: () => 0,
+    add_idle_watch(ms, fn) { const id = this.next++; this.watches.set(id, {kind: 'idle', ms, fn}); return id; },
+    add_user_active_watch(fn) { const id = this.next++; this.watches.set(id, {kind: 'active', fn}); return id; },
+    remove_watch(id) { this.watches.delete(id); },
+    fire(kind) { for (const [id, w] of [...this.watches]) if (w.kind === kind) { if (kind === 'active') this.watches.delete(id); w.fn(); } },
+};
 globalThis.global = {
+    backend: {get_core_idle_monitor: () => idleMonitor},
     display,
     context: {},
     workspace_manager: Object.assign(new Emitter(), {get_active_workspace: () => workspaces[activeWorkspace], get_active_workspace_index: () => activeWorkspace}),
@@ -145,6 +154,12 @@ assert.deepEqual(sent(), ['covered 1']);
 Main.sessionMode.isLocked = false;
 Main.sessionMode.emit('updated');
 sent();
+
+assert.ok([...idleMonitor.watches.values()].some(w => w.kind === 'idle' && w.ms === 300000), 'czujka bezczynności 5 min');
+idleMonitor.fire('idle');
+assert.ok(sent().includes('idle 1'), 'bezczynność zgłoszona');
+idleMonitor.fire('active');
+assert.ok(sent().includes('idle 0'), 'powrót aktywności zgłoszony');
 
 activeWorkspace = 1;
 global.workspace_manager.emit('active-workspace-changed');
@@ -243,7 +258,8 @@ class FakeSettings extends Emitter {
     }
 }
 const menuSettings = new FakeSettings({enabled: true, snowfall: 'heavy', language: '', accumulate: true, melt: true,
-    'snow-on-windows': true, 'over-windows': true, 'behind-windows': false, sharp: false, halloween: true});
+    'snow-on-windows': true, 'over-windows': true, 'behind-windows': false, sharp: false, halloween: true,
+    'idle-slowdown': false, 'rest-when-hidden': false, 'battery-slowdown': false});
 let cleared = 0, opened = 0;
 const {SnowIndicator} = await import(`${EXT}/indicator.js`);
 const indicator = new SnowIndicator(menuSettings, () => cleared++, () => opened++);
@@ -270,8 +286,13 @@ const [snowGroup, languageGroup] = window.page.children;
 assert.equal(window.title, 'Snowhush dla GNOME');
 assert.equal(snowGroup.title, 'Śnieg');
 assert.deepEqual(snowGroup.children.map(r => r.title),
-    ['Gromadzenie', 'Topnienie', 'Śnieg na oknach', 'Płatki nad oknami', 'Za oknami', 'Ostrzejszy obraz', 'Halloween']);
-assert.deepEqual(snowGroup.children.map(r => r.active), [true, true, true, true, false, false, true]);
+    ['Gromadzenie', 'Topnienie', 'Śnieg na oknach', 'Płatki nad oknami', 'Za oknami', 'Ostrzejszy obraz', 'Halloween',
+        'Wolniej po 5 min bezczynności', 'Pauza, gdy okno zasłania śnieg', 'Wolniej na baterii']);
+assert.deepEqual(snowGroup.children.map(r => r.active), [true, true, true, true, false, false, true, false, false, false]);
+assert.equal(snowGroup.children[8].sensitive, false, 'pauza ma sens dopiero, gdy płatki są za oknami');
+menuSettings.set_boolean('over-windows', false);
+assert.equal(snowGroup.children[8].sensitive, true);
+menuSettings.set_boolean('over-windows', true);
 const languageRow = languageGroup.children[0];
 assert.equal(languageRow.title, 'Język');
 assert.equal(languageRow.model.items.length, 16);
@@ -299,6 +320,7 @@ menuSettings.set_boolean('behind-windows', true);
 assert.equal(snowGroup.children[4].active, true);
 assert.equal(snowGroup.children[2].sensitive, false);
 assert.equal(snowGroup.children[3].sensitive, false);
+assert.equal(snowGroup.children[8].sensitive, true, 'za oknami pauza ma sens');
 snowGroup.children[0].active = false;
 menuSettings.set_boolean('enabled', false);
 assert.equal(toggle.subtitle, null);

@@ -13,6 +13,9 @@ const SWITCHES = [
     ['behind-windows', 'Za oknami'],
     ['sharp', 'Ostrzejszy obraz'],
     ['halloween', 'Halloween'],
+    ['idle-slowdown', 'Wolniej po 5 min bezczynności'],
+    ['rest-when-hidden', 'Pauza, gdy okno zasłania śnieg'],
+    ['battery-slowdown', 'Wolniej na baterii'],
 ];
 
 export default class SnowhushPreferences extends ExtensionPreferences {
@@ -70,6 +73,7 @@ export default class SnowhushPreferences extends ExtensionPreferences {
             const behind = settings.get_boolean('behind-windows');
             rows.get('snow-on-windows').sensitive = !behind;
             rows.get('over-windows').sensitive = !behind;
+            rows.get('rest-when-hidden').sensitive = behind || !settings.get_boolean('over-windows');
         };
 
         relabel();
@@ -87,5 +91,6 @@ export default class SnowhushPreferences extends ExtensionPreferences {
             syncLanguage();
         });
         settings.connect('changed::behind-windows', syncSensitive);
+        settings.connect('changed::over-windows', syncSensitive);
     }
 }

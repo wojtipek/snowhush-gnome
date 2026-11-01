@@ -20,6 +20,10 @@ pub enum Command {
     ClearSnow(bool),
     Halloween(bool),
     Slide(f32),
+    Idle(bool),
+    IdleSlowdown(bool),
+    RestWhenHidden(bool),
+    BatterySlowdown(bool),
     Pause(bool),
     Quit,
 }
@@ -63,6 +67,9 @@ pub fn parse(line: &str) -> Result<Command, String> {
             ["calm-fps", value] => value.parse::<u32>().map(|v| Command::CalmFps(v.clamp(10, 60))).map_err(|_| bad()),
             ["sharp", _] => flag(rest.get(1)).map(Command::Sharp),
             ["halloween", _] => flag(rest.get(1)).map(Command::Halloween),
+            ["idle-slowdown", _] => flag(rest.get(1)).map(Command::IdleSlowdown),
+            ["rest-when-hidden", _] => flag(rest.get(1)).map(Command::RestWhenHidden),
+            ["battery-slowdown", _] => flag(rest.get(1)).map(Command::BatterySlowdown),
             _ => Err(bad()),
         },
         "power" => match rest.as_slice() {
@@ -71,6 +78,7 @@ pub fn parse(line: &str) -> Result<Command, String> {
             _ => Err(bad()),
         },
         "clear" => flag(rest.first()).map(Command::ClearSnow),
+        "idle" => flag(rest.first()).map(Command::Idle),
         "pause" => flag(rest.first()).map(Command::Pause),
         "quit" => Ok(Command::Quit),
         _ => Err(bad()),
@@ -132,6 +140,10 @@ mod tests {
         assert_eq!(parse("clear 0").unwrap(), Command::ClearSnow(false));
         assert_eq!(parse("set halloween 0").unwrap(), Command::Halloween(false));
         assert_eq!(parse("slide -6000").unwrap(), Command::Slide(-6000.0));
+        assert_eq!(parse("idle 1").unwrap(), Command::Idle(true));
+        assert_eq!(parse("set idle-slowdown 1").unwrap(), Command::IdleSlowdown(true));
+        assert_eq!(parse("set rest-when-hidden 0").unwrap(), Command::RestWhenHidden(false));
+        assert_eq!(parse("set battery-slowdown 1").unwrap(), Command::BatterySlowdown(true));
         assert!(parse("slide nan").is_err());
         assert_eq!(parse("clear 1").unwrap(), Command::ClearSnow(true));
         assert_eq!(parse("windows 0").unwrap(), Command::Windows { moving: false, list: vec![] });

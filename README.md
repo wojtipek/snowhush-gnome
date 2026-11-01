@@ -42,6 +42,9 @@ The settings window (also under the extension in the *Extensions* app) has:
 - **Behind windows**: snow only on the wallpaper
 - **Sharper image**: draws at the full screen resolution instead of the GNOME scale (uses more GPU)
 - **Halloween**: from 30 October until dawn on 1 November, ghosts made of snow rise out of the drifts, jack-o'-lanterns glow in the snow and the cursor carries a candle (on by default)
+- **Slower after 5 min idle**: after five minutes without mouse or keyboard the snow drops to 10 frames a second, and speeds up again when you're back
+- **Pause when a window hides the snow**: with **Flakes over windows** off (or **Behind windows** on), the snow stops while a window covers the whole screen
+- **Slower on battery**: fewer frames a second when unplugged (15 for calm snowfall, 30 at most)
 - **Language**: automatic (follows the system) or any of the 15 languages below
 
 The snow stops for fullscreen apps, the overview and the lock screen, and gets lighter in power-saver mode.

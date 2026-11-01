@@ -46,6 +46,31 @@ pub fn walls(monitor: &Monitor, all: &[Monitor]) -> (bool, bool) {
 }
 
 #[cfg(test)]
+mod cover_tests {
+    use super::*;
+
+    fn window(id: u64, x: i32, y: i32, width: i32, height: i32) -> Window {
+        Window { id, x, y, width, height, flags: 0 }
+    }
+
+    #[test]
+    fn only_a_topmost_window_over_the_whole_area_covers_it() {
+        let area = Area { x: 0, y: 32, width: 1920, height: 1048 };
+        let mut desktop = Desktop::new();
+        desktop.windows = vec![window(1, 0, 32, 1920, 1048)];
+        assert!(desktop.top_covers(&area));
+        desktop.windows = vec![window(2, 100, 100, 400, 300), window(1, 0, 32, 1920, 1048)];
+        assert!(!desktop.top_covers(&area), "okno nad zmaksymalizowanym ma śnieg na krawędzi");
+        desktop.windows = vec![window(3, 2000, 0, 800, 600), window(1, 0, 32, 1920, 1048)];
+        assert!(desktop.top_covers(&area), "okno na innym monitorze nie przeszkadza");
+        desktop.windows = vec![window(1, 0, 32, 1900, 1048)];
+        assert!(!desktop.top_covers(&area));
+        desktop.windows = vec![];
+        assert!(!desktop.top_covers(&area));
+    }
+}
+
+#[cfg(test)]
 mod walls_tests {
     use super::*;
 
@@ -85,11 +110,26 @@ pub struct Settings {
     pub calm_fps: u32,
     pub sharp: bool,
     pub halloween: bool,
+    pub idle_slowdown: bool,
+    pub rest_when_hidden: bool,
+    pub battery_slowdown: bool,
 }
 
 impl Default for Settings {
     fn default() -> Settings {
-        Settings { snowfall: Snowfall::Steady, accumulate: true, melt: true, snow_on_windows: true, over_windows: true, calm_fps: 20, sharp: false, halloween: true }
+        Settings {
+            snowfall: Snowfall::Steady,
+            accumulate: true,
+            melt: true,
+            snow_on_windows: true,
+            over_windows: true,
+            calm_fps: 20,
+            sharp: false,
+            halloween: true,
+            idle_slowdown: false,
+            rest_when_hidden: false,
+            battery_slowdown: false,
+        }
     }
 }
 
@@ -110,6 +150,7 @@ pub struct Desktop {
     pub all_covered: bool,
     pub fullscreen: HashSet<usize>,
     pub paused: bool,
+    pub idle: bool,
 }
 
 impl Desktop {
@@ -123,6 +164,7 @@ impl Desktop {
             cursor: None,
             all_covered: false,
             fullscreen: HashSet::new(),
+            idle: false,
             paused: false,
         }
     }
@@ -190,6 +232,13 @@ impl Desktop {
 
     pub fn covered(&self, monitor: usize) -> bool {
         self.paused || self.all_covered || self.fullscreen.contains(&monitor)
+    }
+
+    pub fn top_covers(&self, area: &Area) -> bool {
+        let top = self.windows.iter().find(|w| {
+            w.x < area.x + area.width && w.x + w.width > area.x && w.y < area.y + area.height && w.y + w.height > area.y
+        });
+        top.is_some_and(|w| w.x <= area.x && w.y <= area.y && w.x + w.width >= area.x + area.width && w.y + w.height >= area.y + area.height)
     }
 
     pub fn is_elsewhere(&self, id: u64) -> bool {

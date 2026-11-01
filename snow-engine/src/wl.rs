@@ -46,6 +46,7 @@ struct Functions {
     proxy_marshal_array_flags: unsafe extern "C" fn(Proxy, u32, *const WlInterface, u32, u32, *mut WlArgument) -> Proxy,
     proxy_add_listener: unsafe extern "C" fn(Proxy, *const *const c_void, *mut c_void) -> c_int,
     proxy_get_version: unsafe extern "C" fn(Proxy) -> u32,
+    proxy_destroy: unsafe extern "C" fn(Proxy),
     egl_window_create: unsafe extern "C" fn(Proxy, c_int, c_int) -> *mut c_void,
     egl_window_resize: unsafe extern "C" fn(*mut c_void, c_int, c_int, c_int, c_int),
     egl_window_destroy: unsafe extern "C" fn(*mut c_void),
@@ -56,6 +57,7 @@ struct Interfaces {
     compositor: usize,
     surface: usize,
     region: usize,
+    callback: usize,
     wm_base: usize,
     xdg_surface: usize,
     toplevel: usize,
@@ -222,6 +224,15 @@ pub struct WindowEvents {
     pending_size: Option<(i32, i32)>,
     configure_serial: Option<u32>,
     pub closed: bool,
+    frame_callback: Option<Proxy>,
+}
+
+unsafe extern "C" fn frame_done(data: *mut c_void, callback: Proxy, _time: u32) {
+    let events = unsafe { &mut *(data as *mut WindowEvents) };
+    if events.frame_callback == Some(callback) {
+        events.frame_callback = None;
+    }
+    unsafe { (f().proxy_destroy)(callback) };
 }
 
 unsafe extern "C" fn xdg_surface_configure(data: *mut c_void, _surface: Proxy, serial: u32) {
@@ -245,6 +256,7 @@ struct Listener(&'static [*const c_void]);
 unsafe impl Sync for Listener {}
 
 static REGISTRY_LISTENER: Listener = Listener(&[registry_global as *const c_void, registry_global_remove as *const c_void]);
+static FRAME_LISTENER: Listener = Listener(&[frame_done as *const c_void]);
 static WM_BASE_LISTENER: Listener = Listener(&[wm_base_ping as *const c_void]);
 static XDG_SURFACE_LISTENER: Listener = Listener(&[xdg_surface_configure as *const c_void]);
 static TOPLEVEL_LISTENER: Listener =
@@ -312,6 +324,26 @@ impl WlWindow {
     pub fn buffer_scale(&self) -> i32 {
         self.buffer_scale
     }
+
+    pub fn request_frame(&mut self) {
+        if self.events.frame_callback.is_some() {
+            return;
+        }
+        let i = INTERFACES.get().unwrap();
+        unsafe {
+            let callback = marshal(self.surface, 3, iface(i.callback), 0, &mut [arg_o(std::ptr::null_mut())]);
+            if callback.is_null() {
+                return;
+            }
+            let data = (&mut *self.events as *mut WindowEvents).cast::<c_void>();
+            (f().proxy_add_listener)(callback, FRAME_LISTENER.0.as_ptr(), data);
+            self.events.frame_callback = Some(callback);
+        }
+    }
+
+    pub fn frame_pending(&self) -> bool {
+        self.events.frame_callback.is_some()
+    }
 }
 
 pub struct Wayland {
@@ -339,6 +371,7 @@ impl Wayland {
                 proxy_marshal_array_flags: "wl_proxy_marshal_array_flags",
                 proxy_add_listener: "wl_proxy_add_listener",
                 proxy_get_version: "wl_proxy_get_version",
+                proxy_destroy: "wl_proxy_destroy",
             })?
             .with(load!(&egl, PartialEgl {
                 egl_window_create: "wl_egl_window_create",
@@ -353,6 +386,7 @@ impl Wayland {
             compositor: data("wl_compositor_interface")?,
             surface: data("wl_surface_interface")?,
             region: data("wl_region_interface")?,
+            callback: data("wl_callback_interface")?,
             wm_base,
             xdg_surface,
             toplevel,
@@ -423,6 +457,9 @@ impl Wayland {
 
     pub fn destroy_window(&self, window: WlWindow) {
         unsafe {
+            if let Some(callback) = window.events.frame_callback {
+                (f().proxy_destroy)(callback);
+            }
             (f().egl_window_destroy)(window.egl_window);
             marshal(window.toplevel, 0, std::ptr::null(), MARSHAL_DESTROY, &mut []);
             marshal(window.xdg_surface, 0, std::ptr::null(), MARSHAL_DESTROY, &mut []);
@@ -484,6 +521,7 @@ struct PartialClient {
     proxy_marshal_array_flags: unsafe extern "C" fn(Proxy, u32, *const WlInterface, u32, u32, *mut WlArgument) -> Proxy,
     proxy_add_listener: unsafe extern "C" fn(Proxy, *const *const c_void, *mut c_void) -> c_int,
     proxy_get_version: unsafe extern "C" fn(Proxy) -> u32,
+    proxy_destroy: unsafe extern "C" fn(Proxy),
 }
 
 struct PartialEgl {
@@ -507,6 +545,7 @@ impl PartialClient {
             proxy_marshal_array_flags: self.proxy_marshal_array_flags,
             proxy_add_listener: self.proxy_add_listener,
             proxy_get_version: self.proxy_get_version,
+            proxy_destroy: self.proxy_destroy,
             egl_window_create: egl.egl_window_create,
             egl_window_resize: egl.egl_window_resize,
             egl_window_destroy: egl.egl_window_destroy,

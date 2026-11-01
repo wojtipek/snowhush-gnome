@@ -30,6 +30,7 @@ const COVER_TYPES = new Set([
 const POINTER_INTERVAL_MS = 16;
 
 const SLIDE_SPEED = 6000;
+const IDLE_MS = 5 * 60 * 1000;
 
 export class Scout {
     constructor(engine) {
@@ -94,7 +95,37 @@ export class Scout {
 
         this._pointerWatch = PointerWatcher.getPointerWatcher().addWatch(POINTER_INTERVAL_MS, (x, y) => this._sendCursor(x, y));
         this._watchPowerProfile();
+        this._watchIdle();
         this.sendAll();
+    }
+
+    _watchIdle() {
+        const monitor = global.backend?.get_core_idle_monitor?.();
+        if (!monitor)
+            return;
+        this._idleMonitor = monitor;
+        this._idle = monitor.get_idletime() >= IDLE_MS;
+        this._idleWatch = monitor.add_idle_watch(IDLE_MS, () => {
+            this._setIdle(true);
+            this._activeWatch = monitor.add_user_active_watch(() => {
+                this._activeWatch = 0;
+                this._setIdle(false);
+            });
+        });
+    }
+
+    _unwatchIdle() {
+        for (const id of [this._idleWatch, this._activeWatch]) {
+            if (id)
+                this._idleMonitor?.remove_watch(id);
+        }
+        this._idleWatch = this._activeWatch = 0;
+        this._idleMonitor = null;
+    }
+
+    _setIdle(idle) {
+        this._idle = idle;
+        this._engine.send(`idle ${idle ? 1 : 0}`);
     }
 
     stop() {
@@ -106,6 +137,7 @@ export class Scout {
         Main.sessionMode.disconnectObject(this);
         this._pointerWatch?.remove();
         this._pointerWatch = null;
+        this._unwatchIdle();
         if (this._laterId) {
             global.compositor.get_laters().remove(this._laterId);
             this._laterId = 0;
@@ -121,6 +153,7 @@ export class Scout {
         this._sendMonitors();
         this._sendCovered();
         this._sendPower();
+        this._engine.send(`idle ${this._idle ? 1 : 0}`);
         this._sendWindows(true);
         const [x, y] = global.get_pointer();
         this._sendCursor(x, y);

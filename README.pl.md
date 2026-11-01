@@ -41,7 +41,10 @@ W oknie ustawień (dostępnym też przy rozszerzeniu w aplikacji *Rozszerzenia
 - **Śnieg na oknach**, **Płatki nad oknami** (po wyłączeniu płatki chowają się za oknami, a śnieg na krawędziach okien zostaje)
 - **Za oknami**: śnieg tylko na tapecie
 - **Ostrzejszy obraz**: rysowanie w pełnej rozdzielczości ekranu zamiast w skali GNOME (więcej pracy dla karty graficznej)
-- **Halloween**: od 30 października do świtu 1 listopada z zasp wstają duchy ze śniegu, w śniegu świecą dynie, a kursor niesie świeczkę (domyślnie włączone)
+- **Halloween**: od 30 października do świtu 1 listopada z zasp wstają duchy ze śniegu, w śniegu świecą dynie, a kursor niesie świeczkę (domyślnie włączone)
+- **Wolniej po 5 min bezczynności**: po pięciu minutach bez ruchu myszą i klawiaturą śnieg zwalnia do 10 klatek na sekundę i przyspiesza, gdy wrócisz
+- **Pauza, gdy okno zasłania śnieg**: przy wyłączonych **Płatkach nad oknami** (albo włączonym **Za oknami**) śnieg staje, gdy okno zasłania cały ekran
+- **Wolniej na baterii**: mniej klatek na sekundę bez zasilacza (15 przy spokojnym padaniu, najwyżej 30)
 - **Język**: automatycznie (jak w systemie) albo jeden z 15 języków
 
 Śnieg zatrzymuje się przy aplikacjach na pełnym ekranie, w Przeglądzie i na ekranie blokady. W trybie oszczędzania energii pada go mniej.

@@ -62,6 +62,10 @@ export default class SnowhushExtension extends Extension {
         this._engine.send(`clear ${calm ? 1 : 0}`);
     }
 
+    _overWindows() {
+        return this._settings.get_boolean('over-windows') && !this._settings.get_boolean('behind-windows');
+    }
+
     _snowOnWindows() {
         return this._settings.get_boolean('snow-on-windows') && !this._settings.get_boolean('behind-windows');
     }
@@ -99,7 +103,9 @@ export default class SnowhushExtension extends Extension {
         this._engine.send(`set accumulate ${s.get_boolean('accumulate') ? 1 : 0}`);
         this._engine.send(`set melt ${s.get_boolean('melt') ? 1 : 0}`);
         this._engine.send(`set snow-on-windows ${this._snowOnWindows() ? 1 : 0}`);
-        this._engine.send(`set over-windows ${s.get_boolean('over-windows') ? 1 : 0}`);
+        this._engine.send(`set over-windows ${this._overWindows() ? 1 : 0}`);
+        for (const key of ['idle-slowdown', 'rest-when-hidden', 'battery-slowdown'])
+            this._engine.send(`set ${key} ${s.get_boolean(key) ? 1 : 0}`);
         this._engine.send(`set sharp ${s.get_boolean('sharp') ? 1 : 0}`);
         this._engine.send(`set calm-fps ${s.get_int('calm-fps')}`);
         this._engine.send(`set halloween ${s.get_boolean('halloween') ? 1 : 0}`);
@@ -125,12 +131,16 @@ export default class SnowhushExtension extends Extension {
         case 'accumulate':
         case 'melt':
         case 'sharp':
-        case 'over-windows':
         case 'halloween':
+        case 'idle-slowdown':
+        case 'rest-when-hidden':
+        case 'battery-slowdown':
             this._engine.send(`set ${key} ${s.get_boolean(key) ? 1 : 0}`);
             break;
+        case 'over-windows':
         case 'snow-on-windows':
         case 'behind-windows':
+            this._engine.send(`set over-windows ${this._overWindows() ? 1 : 0}`);
             this._engine.setBehindWindows(s.get_boolean('behind-windows'));
             this._engine.send(`set snow-on-windows ${this._snowOnWindows() ? 1 : 0}`);
             this._scout.setSnowOnWindows(!s.get_boolean('behind-windows'));

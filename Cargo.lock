@@ -8,7 +8,7 @@ version = "0.1.0"
 
 [[package]]
 name = "snow-core"
-version = "0.5.10"
+version = "0.5.14"
 
 [[package]]
 name = "snow-engine"

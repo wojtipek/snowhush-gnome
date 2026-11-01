@@ -11,6 +11,7 @@ use crate::render::{Ambient, Renderer};
 use crate::wl::{Wayland, WlWindow};
 
 pub const AWAY: V2 = V2::new(-10_000.0, -10_000.0);
+const REST: Duration = Duration::from_secs(1);
 pub const APP_ID: &str = "org.snowhush.Overlay";
 
 pub struct Screen {
@@ -158,7 +159,10 @@ impl Screen {
         for _ in 0..substeps {
             changed |= self.simulation.step(dt, cursor);
         }
-        let lantern_moved = night > 0.0 && (cursor - self.lantern).length() > 0.5;
+        let (width, height) = (self.simulation.width(), self.simulation.height());
+        let reach = crate::render::LANTERN_REACH;
+        let near = |p: V2| p.x > -reach && p.x < width + reach && p.y > -reach && p.y < height + reach;
+        let lantern_moved = night > 0.0 && (cursor - self.lantern).length() > 0.5 && (near(cursor) || near(self.lantern));
         self.lantern = cursor;
         changed |= lantern_moved;
 
@@ -169,6 +173,9 @@ impl Screen {
             _ => fastest.max(calm),
         };
         self.next_due = now + Duration::from_secs_f64(1.0 / rate as f64);
+        if self.simulation.is_empty() {
+            self.next_due = now + REST;
+        }
         self.idle_frames = if changed { 0 } else { self.idle_frames + 1 };
         let visible = self.simulation.has_snow() || self.simulation.sprite_count() > 0;
         if !(changed || (self.simulation.has_snow() && self.idle_frames.is_multiple_of(2))) {

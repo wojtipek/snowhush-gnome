@@ -194,6 +194,7 @@ impl App {
 
     fn apply(&mut self, command: Command) {
         let now = Instant::now();
+        let cursor_only = matches!(command, Command::Cursor(_));
         match command {
             Command::Monitors(monitors) => self.sync_screens(monitors),
             Command::Windows { moving, list } => {
@@ -267,7 +268,11 @@ impl App {
             Command::Pause(on) => self.desktop.paused = on,
             Command::Quit => self.quit = true,
         }
-        self.screens.iter_mut().for_each(|s| s.wake(now));
+        for screen in &mut self.screens {
+            if !(cursor_only && screen.simulation.is_empty()) {
+                screen.wake(now);
+            }
+        }
     }
 
     fn update_halloween(&mut self) {

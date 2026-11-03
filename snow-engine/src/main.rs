@@ -15,8 +15,9 @@ use std::io::Write;
 use std::time::{Duration, Instant};
 
 use snow_core::halloween;
+use snow_core::simulation::Mode;
 
-use desktop::{Area, Desktop, Monitor, Power, Settings};
+use desktop::{Area, Desktop, HalloweenDays, Monitor, Power, Settings};
 use egl::{Egl, Platform};
 use protocol::Command;
 use render::Renderer;
@@ -261,19 +262,21 @@ impl App {
                 let direction = self.screens.first().map_or(-1.0, |s| s.simulation.breeze_direction());
                 self.screens.iter_mut().for_each(|s| s.simulation.blow_away(direction, calm));
             }
-            Command::Halloween(on) => {
-                self.settings.halloween = on;
+            Command::Halloween(days) => {
+                self.settings.halloween = days;
                 self.update_halloween();
             }
             Command::Idle(on) => self.desktop.idle = on,
-            Command::Mode { autumn, calm } => {
-                self.settings.autumn = autumn;
+            Command::Mode { mode, calm } => {
+                self.settings.mode = mode;
+                self.update_halloween();
                 let direction = self.screens.first().map_or(-1.0, |s| s.simulation.breeze_direction());
-                self.screens.iter_mut().for_each(|s| s.simulation.switch_mode(autumn, direction, calm));
+                self.screens.iter_mut().for_each(|s| s.simulation.switch_mode(mode, direction, calm));
             }
-            Command::Autumn(on) => {
-                self.settings.autumn = on;
-                self.screens.iter_mut().for_each(|s| s.simulation.set_autumn(on));
+            Command::SetMode(on) => {
+                self.settings.mode = on;
+                self.update_halloween();
+                self.screens.iter_mut().for_each(|s| s.simulation.set_mode(on));
             }
             Command::IdleSlowdown(on) => self.settings.idle_slowdown = on,
             Command::RestWhenHidden(on) => self.settings.rest_when_hidden = on,
@@ -289,7 +292,12 @@ impl App {
     }
 
     fn update_halloween(&mut self) {
-        let wanted = self.season && self.settings.halloween;
+        let wanted = self.settings.mode == Mode::Snow
+            && match self.settings.halloween {
+                HalloweenDays::Always => true,
+                HalloweenDays::Season => self.season,
+                HalloweenDays::Off => false,
+            };
         if wanted != self.halloween {
             self.halloween = wanted;
             log!("Halloween: {}", if wanted { "tak" } else { "nie" });
@@ -476,7 +484,7 @@ fn snapshot(path: &str, seconds: f32) -> Result<(), String> {
         lantern: V2::new(width as f32 * 0.75, 40.0),
     };
     let masks = if std::env::var_os("SNOWHUSH_BEHIND").is_some() { desktop.masks(&area, (width as f32, height as f32)) } else { Vec::new() };
-    renderer.draw(&simulation, (width, height), 1.0, ambient, 3.0, &masks)?;
+    renderer.draw(&simulation, (width, height), 1.0, ambient, 3.0, &masks, 1.0)?;
     let mut pixels = vec![0u8; (width * height * 4) as usize];
     unsafe {
         (renderer.gl.PixelStorei)(gl::PACK_ALIGNMENT, 1);

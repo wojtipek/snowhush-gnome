@@ -1,5 +1,5 @@
-use crate::desktop::{Area, Monitor, Power, Window, parse_snowfall};
-use snow_core::simulation::Snowfall;
+use crate::desktop::{Area, HalloweenDays, Monitor, Power, Window, parse_snowfall};
+use snow_core::simulation::{Mode, Snowfall};
 
 #[derive(Debug, PartialEq)]
 pub enum Command {
@@ -18,11 +18,11 @@ pub enum Command {
     Sharp(bool),
     Power(Power),
     ClearSnow(bool),
-    Halloween(bool),
+    Halloween(HalloweenDays),
     Slide(f32),
     Idle(bool),
-    Mode { autumn: bool, calm: bool },
-    Autumn(bool),
+    Mode { mode: Mode, calm: bool },
+    SetMode(Mode),
     IdleSlowdown(bool),
     RestWhenHidden(bool),
     BatterySlowdown(bool),
@@ -68,11 +68,16 @@ pub fn parse(line: &str) -> Result<Command, String> {
             ["over-windows", _] => flag(rest.get(1)).map(Command::OverWindows),
             ["calm-fps", value] => value.parse::<u32>().map(|v| Command::CalmFps(v.clamp(10, 60))).map_err(|_| bad()),
             ["sharp", _] => flag(rest.get(1)).map(Command::Sharp),
-            ["halloween", _] => flag(rest.get(1)).map(Command::Halloween),
+            ["halloween", value] => match *value {
+                "season" | "1" => Ok(Command::Halloween(HalloweenDays::Season)),
+                "always" => Ok(Command::Halloween(HalloweenDays::Always)),
+                "off" | "0" => Ok(Command::Halloween(HalloweenDays::Off)),
+                _ => Err(bad()),
+            },
             ["idle-slowdown", _] => flag(rest.get(1)).map(Command::IdleSlowdown),
             ["rest-when-hidden", _] => flag(rest.get(1)).map(Command::RestWhenHidden),
             ["battery-slowdown", _] => flag(rest.get(1)).map(Command::BatterySlowdown),
-            ["autumn", _] => flag(rest.get(1)).map(Command::Autumn),
+            ["mode", value] => parse_mode(value).map(Command::SetMode).ok_or_else(bad),
             _ => Err(bad()),
         },
         "power" => match rest.as_slice() {
@@ -84,18 +89,23 @@ pub fn parse(line: &str) -> Result<Command, String> {
         "idle" => flag(rest.first()).map(Command::Idle),
         "mode" => match rest[..] {
             [mode, calm] => {
-                let autumn = match mode {
-                    "autumn" => true,
-                    "snow" => false,
-                    _ => return Err(bad()),
-                };
-                flag(Some(&calm)).map(|calm| Command::Mode { autumn, calm })
+                let mode = parse_mode(mode).ok_or_else(bad)?;
+                flag(Some(&calm)).map(|calm| Command::Mode { mode, calm })
             }
             _ => Err(bad()),
         },
         "pause" => flag(rest.first()).map(Command::Pause),
         "quit" => Ok(Command::Quit),
         _ => Err(bad()),
+    }
+}
+
+fn parse_mode(text: &str) -> Option<Mode> {
+    match text {
+        "snow" => Some(Mode::Snow),
+        "autumn" => Some(Mode::Autumn),
+        "rain" => Some(Mode::Rain),
+        _ => None,
     }
 }
 
@@ -152,13 +162,16 @@ mod tests {
             }])
         );
         assert_eq!(parse("clear 0").unwrap(), Command::ClearSnow(false));
-        assert_eq!(parse("set halloween 0").unwrap(), Command::Halloween(false));
+        assert_eq!(parse("set halloween 0").unwrap(), Command::Halloween(HalloweenDays::Off));
+        assert_eq!(parse("set halloween always").unwrap(), Command::Halloween(HalloweenDays::Always));
+        assert_eq!(parse("set halloween season").unwrap(), Command::Halloween(HalloweenDays::Season));
+        assert_eq!(parse("mode rain 0").unwrap(), Command::Mode { mode: Mode::Rain, calm: false });
+        assert_eq!(parse("set mode rain").unwrap(), Command::SetMode(Mode::Rain));
         assert_eq!(parse("slide -6000").unwrap(), Command::Slide(-6000.0));
         assert_eq!(parse("idle 1").unwrap(), Command::Idle(true));
-        assert_eq!(parse("mode autumn 0").unwrap(), Command::Mode { autumn: true, calm: false });
-        assert_eq!(parse("mode snow 1").unwrap(), Command::Mode { autumn: false, calm: true });
+        assert_eq!(parse("mode autumn 0").unwrap(), Command::Mode { mode: Mode::Autumn, calm: false });
+        assert_eq!(parse("mode snow 1").unwrap(), Command::Mode { mode: Mode::Snow, calm: true });
         assert!(parse("mode winter 0").is_err());
-        assert_eq!(parse("set autumn 1").unwrap(), Command::Autumn(true));
         assert_eq!(parse("set idle-slowdown 1").unwrap(), Command::IdleSlowdown(true));
         assert_eq!(parse("set rest-when-hidden 0").unwrap(), Command::RestWhenHidden(false));
         assert_eq!(parse("set battery-slowdown 1").unwrap(), Command::BatterySlowdown(true));

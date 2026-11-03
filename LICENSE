@@ -1,6 +1,9 @@
+This licence covers the GNOME port's own code. snow-core/src, snow-engine/src/shaders
+and snow-engine/assets come from Snowhush and are under the PolyForm Noncommercial
+License 1.0.0, see LICENSE-SNOWHUSH.
+
 MIT License
 
-Copyright (c) 2026 Mykhailo Bezruchko (Snowhush, https://github.com/mbezruchko/Snowhush)
 Copyright (c) 2026 wojtipek (port for GNOME)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

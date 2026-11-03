@@ -1,7 +1,14 @@
 use std::collections::HashSet;
 
 use snow_core::geometry::Rect;
-use snow_core::simulation::{Snowfall, WindowSurface};
+use snow_core::simulation::{Mode, Snowfall, WindowSurface};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HalloweenDays {
+    Season,
+    Always,
+    Off,
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Window {
@@ -109,11 +116,11 @@ pub struct Settings {
     pub over_windows: bool,
     pub calm_fps: u32,
     pub sharp: bool,
-    pub halloween: bool,
+    pub halloween: HalloweenDays,
     pub idle_slowdown: bool,
     pub rest_when_hidden: bool,
     pub battery_slowdown: bool,
-    pub autumn: bool,
+    pub mode: Mode,
 }
 
 impl Default for Settings {
@@ -126,11 +133,11 @@ impl Default for Settings {
             over_windows: true,
             calm_fps: 20,
             sharp: false,
-            halloween: true,
+            halloween: HalloweenDays::Season,
             idle_slowdown: false,
             rest_when_hidden: false,
             battery_slowdown: false,
-            autumn: false,
+            mode: Mode::Snow,
         }
     }
 }
@@ -204,6 +211,7 @@ impl Desktop {
                     id: window.id as isize,
                     frame,
                     blockers: blockers.iter().filter(|b| intersects(b, &region)).copied().collect(),
+                    cover: blockers.iter().filter(|b| intersects(b, &frame)).copied().collect(),
                     corner_radius: radius,
                     corner_exponent: 2.0,
                 });

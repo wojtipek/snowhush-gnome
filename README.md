@@ -31,9 +31,9 @@ Everything goes into one folder, `~/.local/share/gnome-shell/extensions/snowhush
 
 Open **Quick Settings** (top-right corner, where Wi-Fi and Bluetooth are) and find the **Snow** tile. Clicking the tile turns the snow on and off, and the arrow next to it opens the menu:
 
-- **Snow** or **Autumn leaves**: leaves can fall instead of snow. On a switch, a gust clears what is lying around, then the other kind starts falling from the top. The tile is then called **Leaves** and shows a leaf icon
+- **Snow**, **Autumn leaves** or **Rain**: what falls. On a switch, a gust clears what is lying around, then the new kind starts falling from the top. The tile changes its name and icon. Rain splashes on the windows and runs down their glass in drops
 - **Snowfall**: no snowfall, light, moderate, heavy or variable
-- **Blow the snow away** (or **Blow the leaves away**): a gust clears all the snow, including snow on windows on other workspaces
+- **Blow the snow away** (or **Blow the leaves away**; not shown with rain): a gust clears all the snow, including snow on windows on other workspaces
 - **Options**: opens the settings window
 
 The settings window (also under the extension in the *Extensions* app) has:
@@ -42,7 +42,7 @@ The settings window (also under the extension in the *Extensions* app) has:
 - **Snow on windows**, **Flakes over windows** (turn off to keep the flakes behind windows while the snow on their edges stays)
 - **Behind windows**: snow only on the wallpaper
 - **Sharper image**: draws at the full screen resolution instead of the GNOME scale (uses more GPU)
-- **Halloween**: from 30 October until dawn on 1 November, ghosts made of snow rise out of the drifts, jack-o'-lanterns glow in the snow and the cursor carries a candle (on by default)
+- **Halloween**: ghosts made of snow rise out of the drifts, jack-o'-lanterns glow in the snow and the cursor carries a candle. Choose from 30 October to 1 November (default), always, or off. Only with snow
 - **Slower after 5 min idle**: after five minutes without mouse or keyboard the snow drops to 10 frames a second, and speeds up again when you're back
 - **Pause when a window hides the snow**: with **Flakes over windows** off (or **Behind windows** on), the snow stops while a window covers the whole screen
 - **Slower on battery**: fewer frames a second when unplugged (15 for calm snowfall, 30 at most)
@@ -94,4 +94,4 @@ This builds the engine, runs all the tests (the original physics tests, the prot
 
 ## Licence
 
-MIT, see [LICENSE](LICENSE). Snowhush © Mykhailo Bezruchko.
+The port's own code (the GNOME extension and the engine around the physics) is MIT, see [LICENSE](LICENSE). The physics (`snow-core/src`), the shaders and the Halloween pictures come from Snowhush © Mykhailo Bezruchko and are under [PolyForm Noncommercial 1.0.0](LICENSE-SNOWHUSH): free to use, share and change, but not to sell. So the whole package can't be sold either.

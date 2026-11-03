@@ -20,9 +20,9 @@ mkdir -p "$PKG"
 cp -r "extension/$UUID" "$PKG/"
 mkdir -p "$PKG/$UUID/bin"
 cp target/release/snowhush-engine "$PKG/$UUID/bin/"
-cp LICENSE packaging/uninstall.sh "$PKG/$UUID/"
+cp LICENSE LICENSE-SNOWHUSH packaging/uninstall.sh "$PKG/$UUID/"
 glib-compile-schemas "$PKG/$UUID/schemas"
-cp packaging/install.sh packaging/uninstall.sh README.md README.pl.md LICENSE "$PKG/"
+cp packaging/install.sh packaging/uninstall.sh README.md README.pl.md LICENSE LICENSE-SNOWHUSH "$PKG/"
 
 mkdir -p "$STAGE/snowhush-zrodla"
 tar -C "$ROOT" --exclude=./target --exclude=./dist --exclude=./.git -cf - . | tar -C "$STAGE/snowhush-zrodla" -xf -

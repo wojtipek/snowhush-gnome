@@ -10,6 +10,8 @@ use crate::egl::{EGLSurface, Egl};
 use crate::render::{Ambient, Renderer};
 use crate::wl::{Wayland, WlWindow};
 
+const FADE_OUT: f32 = 0.25;
+const FADE_IN: f32 = 0.35;
 pub const AWAY: V2 = V2::new(-10_000.0, -10_000.0);
 const REST: Duration = Duration::from_secs(1);
 const FRAME_WAIT: Duration = Duration::from_secs(1);
@@ -30,6 +32,7 @@ pub struct Screen {
     windows_seen: u64,
     windows_changed_at: Instant,
     covered: bool,
+    opacity: f32,
     cleared: bool,
     damage: Damage,
     pub damaged: f32,
@@ -51,7 +54,7 @@ impl Screen {
         let mut simulation = SnowSimulation::new(size.0 as f32, size.1 as f32, settings.snowfall);
         simulation.thaws = settings.melt;
         simulation.accumulates = settings.accumulate;
-        simulation.set_autumn(settings.autumn);
+        simulation.set_mode(settings.mode);
         crate::log!("monitor {}: obszar {:?}, skala {}", monitor.index, monitor.area, monitor.scale);
         let mut screen = Screen {
             monitor,
@@ -65,6 +68,7 @@ impl Screen {
             windows_seen: 0,
             windows_changed_at: now,
             covered: false,
+            opacity: 1.0,
             cleared: false,
             damage: Damage::new(),
             damaged: 0.0,
@@ -165,7 +169,7 @@ impl Screen {
                 self.resume();
             }
         }
-        if covered {
+        if covered && self.opacity <= 0.0 {
             if !self.cleared || std::mem::take(&mut self.must_draw) {
                 egl.make_current(self.surface)?;
                 renderer.clear(self.window.buffer_size());
@@ -191,6 +195,12 @@ impl Screen {
         let substeps = (elapsed / 0.05).ceil().max(1.0) as usize;
         let dt = elapsed / substeps as f32;
         self.last_step = Some(now);
+        let target = if covered { 0.0 } else { 1.0 };
+        let fading = self.opacity != target;
+        if fading {
+            let step = elapsed / if covered { FADE_OUT } else { FADE_IN };
+            self.opacity = if target > self.opacity { (self.opacity + step).min(1.0) } else { (self.opacity - step).max(0.0) };
+        }
         if settings.snow_on_windows {
             self.follow(desktop, now);
         }
@@ -204,7 +214,7 @@ impl Screen {
         let near = |p: V2| p.x > -reach && p.x < width + reach && p.y > -reach && p.y < height + reach;
         let lantern_moved = night > 0.0 && (cursor - self.lantern).length() > 0.5 && (near(cursor) || near(self.lantern));
         self.lantern = cursor;
-        changed |= lantern_moved || std::mem::take(&mut self.must_draw);
+        changed |= lantern_moved || fading || std::mem::take(&mut self.must_draw);
 
         let mut fastest: u32 = 60;
         let mut calm = if power == Power::Saver { settings.calm_fps.min(24) } else { settings.calm_fps };
@@ -213,7 +223,7 @@ impl Screen {
             fastest = fastest.min(BATTERY_FASTEST_FPS);
         }
         let mut rate = match self.simulation.pace() {
-            Pace::Calm if !lantern_moved => calm,
+            Pace::Calm if !lantern_moved && !fading => calm,
             _ => fastest.max(calm),
         };
         if settings.idle_slowdown && desktop.idle {
@@ -245,8 +255,8 @@ impl Screen {
         };
         let size = self.window.buffer_size();
         let scale = self.window.buffer_scale() as f32;
-        let drawn = renderer.draw(&self.simulation, size, scale, ambient, time, &masks)?;
-        let rects = if drawn.extras {
+        let drawn = renderer.draw(&self.simulation, size, scale, ambient, time, &masks, self.opacity)?;
+        let rects = if drawn.extras || fading {
             self.damage.invalidate();
             None
         } else {

@@ -31,9 +31,9 @@ Wszystko trafia do jednego folderu: `~/.local/share/gnome-shell/extensions/snowh
 
 Otwórz **Szybkie ustawienia** (prawy górny róg, tam gdzie Wi-Fi i Bluetooth) i znajdź kafelek **Śnieg**. Kliknięcie kafelka włącza i wyłącza śnieg, a strzałka obok otwiera menu:
 
-- **Śnieg** albo **Jesienne liście**: zamiast śniegu mogą spadać liście. Przy zmianie podmuch zwiewa to, co leży, a potem z góry zaczyna padać to drugie. Kafelek nazywa się wtedy **Liście** i ma ikonę liścia
+- **Śnieg**, **Jesienne liście** albo **Deszcz**: co pada. Przy zmianie podmuch zwiewa to, co leży, a potem z góry zaczyna padać nowe. Kafelek zmienia wtedy nazwę i ikonę. Deszcz rozpryskuje się na oknach i spływa kroplami po ich szybach
 - **Opady**: bez opadów, lekki, umiarkowany, gęsty albo zmienny
-- **Zdmuchnij śnieg** (albo **Zdmuchnij liście**): podmuch wiatru zwiewa cały śnieg, także z okien na innych obszarach roboczych
+- **Zdmuchnij śnieg** (albo **Zdmuchnij liście**; przy deszczu tej pozycji nie ma): podmuch wiatru zwiewa cały śnieg, także z okien na innych obszarach roboczych
 - **Opcje**: otwiera okno ustawień
 
 W oknie ustawień (dostępnym też przy rozszerzeniu w aplikacji *Rozszerzenia*) są:
@@ -42,7 +42,7 @@ W oknie ustawień (dostępnym też przy rozszerzeniu w aplikacji *Rozszerzenia
 - **Śnieg na oknach**, **Płatki nad oknami** (po wyłączeniu płatki chowają się za oknami, a śnieg na krawędziach okien zostaje)
 - **Za oknami**: śnieg tylko na tapecie
 - **Ostrzejszy obraz**: rysowanie w pełnej rozdzielczości ekranu zamiast w skali GNOME (więcej pracy dla karty graficznej)
-- **Halloween**: od 30 października do świtu 1 listopada z zasp wstają duchy ze śniegu, w śniegu świecą dynie, a kursor niesie świeczkę (domyślnie włączone)
+- **Halloween**: z zasp wstają duchy ze śniegu, w śniegu świecą dynie, a kursor niesie świeczkę. Do wyboru: od 30 października do 1 listopada (domyślnie), zawsze albo wyłączone. Działa tylko przy śniegu
 - **Wolniej po 5 min bezczynności**: po pięciu minutach bez ruchu myszą i klawiaturą śnieg zwalnia do 10 klatek na sekundę i przyspiesza, gdy wrócisz
 - **Pauza, gdy okno zasłania śnieg**: przy wyłączonych **Płatkach nad oknami** (albo włączonym **Za oknami**) śnieg staje, gdy okno zasłania cały ekran
 - **Wolniej na baterii**: mniej klatek na sekundę bez zasilacza (15 przy spokojnym padaniu, najwyżej 30)
@@ -70,4 +70,4 @@ Opis działania i budowania ze źródeł jest w [angielskim README](README.md#
 
 ## Licencja
 
-MIT, zobacz [LICENSE](LICENSE). Snowhush © Mykhailo Bezruchko.
+Własny kod portu (rozszerzenie GNOME i silnik wokół fizyki) jest na licencji MIT, zobacz [LICENSE](LICENSE). Fizyka (`snow-core/src`), shadery i obrazki na Halloween pochodzą ze Snowhusha © Mykhailo Bezruchko i są na licencji [PolyForm Noncommercial 1.0.0](LICENSE-SNOWHUSH): można je za darmo używać, udostępniać i zmieniać, ale nie sprzedawać. Dlatego całej paczki też nie wolno sprzedawać.

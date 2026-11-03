@@ -45,9 +45,14 @@
       <default>false</default>
       <summary>Ostrzejszy obraz (rysowanie w pełnej rozdzielczości ekranu)</summary>
     </key>
-    <key name="halloween" type="b">
-      <default>true</default>
-      <summary>Halloween: duchy ze śniegu i dynie od 30 października do świtu 1 listopada</summary>
+    <key name="halloween-days" type="s">
+      <choices>
+        <choice value="season"/>
+        <choice value="always"/>
+        <choice value="off"/>
+      </choices>
+      <default>'season'</default>
+      <summary>Halloween: duchy ze śniegu i dynie od 30 października do świtu 1 listopada, zawsze albo wcale</summary>
     </key>
     <key name="idle-slowdown" type="b">
       <default>false</default>
@@ -61,9 +66,14 @@
       <default>false</default>
       <summary>Na baterii mniej klatek na sekundę (15 przy spokojnym padaniu, najwyżej 30)</summary>
     </key>
-    <key name="autumn" type="b">
-      <default>false</default>
-      <summary>Jesienne liście zamiast śniegu</summary>
+    <key name="mode" type="s">
+      <choices>
+        <choice value="snow"/>
+        <choice value="autumn"/>
+        <choice value="rain"/>
+      </choices>
+      <default>'snow'</default>
+      <summary>Co pada: śnieg, jesienne liście albo deszcz</summary>
     </key>
     <key name="language" type="s">
       <default>''</default>

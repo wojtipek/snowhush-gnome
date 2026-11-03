@@ -9,8 +9,9 @@ import {_, setLanguage} from './i18n.js';
 const ICON = 'weather-snow-symbolic';
 
 const MODES = [
-    [false, 'Śnieg'],
-    [true, 'Jesienne liście'],
+    ['snow', 'Śnieg', 'Śnieg', 'Zdmuchnij śnieg'],
+    ['autumn', 'Jesienne liście', 'Liście', 'Zdmuchnij liście'],
+    ['rain', 'Deszcz', 'Deszcz', null],
 ];
 
 export const SNOWFALL = [
@@ -30,17 +31,20 @@ class SnowToggle extends QuickMenuToggle {
         });
         this._settings = settings;
         this._labels = [];
-        this._snowIcon = new Gio.ThemedIcon({name: ICON});
-        this._leafIcon = new Gio.FileIcon({file: Gio.File.new_for_path(`${path}/icons/leaf-symbolic.svg`)});
+        this._icons = {
+            snow: new Gio.ThemedIcon({name: ICON}),
+            autumn: new Gio.FileIcon({file: Gio.File.new_for_path(`${path}/icons/leaf-symbolic.svg`)}),
+            rain: new Gio.ThemedIcon({name: 'weather-showers-symbolic'}),
+        };
         settings.bind('enabled', this, 'checked', Gio.SettingsBindFlags.DEFAULT);
 
         this._modeItems = new Map();
         const modeSection = new PopupMenu.PopupMenuSection();
-        for (const [autumn, text] of MODES) {
+        for (const [mode, text] of MODES) {
             const item = new PopupMenu.PopupMenuItem(text);
-            item.connect('activate', () => settings.set_boolean('autumn', autumn));
+            item.connect('activate', () => settings.set_string('mode', mode));
             modeSection.addMenuItem(item);
-            this._modeItems.set(autumn, item);
+            this._modeItems.set(mode, item);
             this._labels.push([item.label, text]);
         }
         this.menu.addMenuItem(modeSection);
@@ -68,28 +72,31 @@ class SnowToggle extends QuickMenuToggle {
         this._labels.push([optionsItem.label, 'Opcje']);
 
         this._language = null;
-        this._autumn = null;
+        this._mode = null;
         settings.connectObject('changed', () => this._sync(), this);
         this._sync();
     }
 
     _sync() {
         const language = this._settings.get_string('language');
-        const autumn = this._settings.get_boolean('autumn');
-        if (language !== this._language || autumn !== this._autumn) {
+        const found = MODES.find(([value]) => value === this._settings.get_string('mode')) ?? MODES[0];
+        const [mode, , title, clear] = found;
+        if (language !== this._language || mode !== this._mode) {
             this._language = language;
-            this._autumn = autumn;
+            this._mode = mode;
             setLanguage(language);
-            const icon = autumn ? this._leafIcon : this._snowIcon;
+            const icon = this._icons[mode];
             this.gicon = icon;
-            this.title = _(autumn ? 'Liście' : 'Śnieg');
+            this.title = _(title);
             this.menu.setHeader(icon, this.title, _('Snowhush dla GNOME'));
-            this._clearItem.label.text = _(autumn ? 'Zdmuchnij liście' : 'Zdmuchnij śnieg');
+            this._clearItem.visible = clear !== null;
+            if (clear)
+                this._clearItem.label.text = _(clear);
             for (const [label, text] of this._labels)
                 label.text = _(text);
         }
         for (const [value, item] of this._modeItems)
-            item.setOrnament(value === autumn ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NO_DOT);
+            item.setOrnament(value === mode ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NO_DOT);
         const snowfall = this._settings.get_string('snowfall');
         for (const [value, item] of this._snowfallItems)
             item.setOrnament(value === snowfall ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NO_DOT);

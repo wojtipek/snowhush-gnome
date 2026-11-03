@@ -52,6 +52,13 @@ pub const PACK_ALIGNMENT: GLenum = 0x0D05;
 pub const RENDERER: GLenum = 0x1F01;
 pub const VERSION: GLenum = 0x1F02;
 pub const NO_ERROR: GLenum = 0;
+pub const ZERO: GLenum = 0;
+pub const TRIANGLES: GLenum = 0x0004;
+pub const CONSTANT_ALPHA: GLenum = 0x8003;
+pub const EXTENSIONS: GLenum = 0x1F03;
+pub const HALF_FLOAT: GLenum = 0x140B;
+pub const RG: GLenum = 0x8227;
+pub const RG16F: GLint = 0x822F;
 
 macro_rules! gl_functions {
     ($($name:ident : fn($($arg:ty),*) $(-> $ret:ty)?;)*) => {
@@ -132,6 +139,11 @@ gl_functions! {
     CheckFramebufferStatus: fn(GLenum) -> GLenum;
     ReadPixels: fn(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, *mut c_void);
     Finish: fn();
+    BlendColor: fn(GLfloat, GLfloat, GLfloat, GLfloat);
+    BlendFuncSeparate: fn(GLenum, GLenum, GLenum, GLenum);
+    FramebufferTexture2D: fn(GLenum, GLenum, GLenum, GLuint, GLint);
+    DeleteFramebuffers: fn(GLsizei, *const GLuint);
+    DeleteTextures: fn(GLsizei, *const GLuint);
 }
 
 pub fn lookup_with(get_proc: impl Fn(&CString) -> *mut c_void, fallback: Option<Library>) -> impl Fn(&str) -> *mut c_void {

@@ -5,6 +5,12 @@ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/ex
 
 import {_, LANGUAGES, setLanguage} from './i18n.js';
 
+const HALLOWEEN = [
+    ['season', 'Od 30 października do 1 listopada'],
+    ['always', 'Zawsze'],
+    ['off', 'Wyłączone'],
+];
+
 const SWITCHES = [
     ['accumulate', 'Gromadzenie'],
     ['melt', 'Topnienie'],
@@ -12,7 +18,6 @@ const SWITCHES = [
     ['over-windows', 'Płatki nad oknami'],
     ['behind-windows', 'Za oknami'],
     ['sharp', 'Ostrzejszy obraz'],
-    ['halloween', 'Halloween'],
     ['idle-slowdown', 'Wolniej po 5 min bezczynności'],
     ['rest-when-hidden', 'Pauza, gdy okno zasłania śnieg'],
     ['battery-slowdown', 'Wolniej na baterii'],
@@ -41,6 +46,11 @@ export default class SnowhushPreferences extends ExtensionPreferences {
             labels.push([row, text]);
         }
 
+        const halloweenNames = Gtk.StringList.new(HALLOWEEN.map(([, text]) => text));
+        const halloweenRow = new Adw.ComboRow({model: halloweenNames});
+        snowGroup.add(halloweenRow);
+        labels.push([halloweenRow, 'Halloween']);
+
         const languageGroup = new Adw.PreferencesGroup();
         page.add(languageGroup);
         const sorted = [...LANGUAGES].sort(([, a], [, b]) => a.localeCompare(b));
@@ -59,6 +69,8 @@ export default class SnowhushPreferences extends ExtensionPreferences {
             for (const [widget, text] of labels)
                 widget.title = _(text);
             names.splice(0, 1, [_('Automatycznie')]);
+            halloweenNames.splice(0, HALLOWEEN.length, HALLOWEEN.map(([, text]) => _(text)));
+            syncHalloween();
             updating = false;
         };
         const syncLanguage = () => {
@@ -67,6 +79,15 @@ export default class SnowhushPreferences extends ExtensionPreferences {
                 updating = true;
                 languageRow.selected = index;
                 updating = false;
+            }
+        };
+        const syncHalloween = () => {
+            const index = Math.max(0, HALLOWEEN.findIndex(([value]) => value === settings.get_string('halloween-days')));
+            if (halloweenRow.selected !== index) {
+                const was = updating;
+                updating = true;
+                halloweenRow.selected = index;
+                updating = was;
             }
         };
         const syncSensitive = () => {
@@ -79,6 +100,14 @@ export default class SnowhushPreferences extends ExtensionPreferences {
         relabel();
         syncLanguage();
         syncSensitive();
+        halloweenRow.connect('notify::selected', () => {
+            if (updating)
+                return;
+            const value = HALLOWEEN[halloweenRow.selected]?.[0] ?? 'season';
+            if (settings.get_string('halloween-days') !== value)
+                settings.set_string('halloween-days', value);
+        });
+        settings.connect('changed::halloween-days', syncHalloween);
         languageRow.connect('notify::selected', () => {
             if (updating)
                 return;

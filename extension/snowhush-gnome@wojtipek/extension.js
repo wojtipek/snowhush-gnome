@@ -108,8 +108,8 @@ export default class SnowhushExtension extends Extension {
             this._engine.send(`set ${key} ${s.get_boolean(key) ? 1 : 0}`);
         this._engine.send(`set sharp ${s.get_boolean('sharp') ? 1 : 0}`);
         this._engine.send(`set calm-fps ${s.get_int('calm-fps')}`);
-        this._engine.send(`set halloween ${s.get_boolean('halloween') ? 1 : 0}`);
-        this._engine.send(`set autumn ${s.get_boolean('autumn') ? 1 : 0}`);
+        this._engine.send(`set halloween ${s.get_string('halloween-days')}`);
+        this._engine.send(`set mode ${s.get_string('mode')}`);
         if (this._running && this._scoutRunning)
             this._scout.sendAll();
     }
@@ -126,18 +126,20 @@ export default class SnowhushExtension extends Extension {
         case 'snowfall':
             this._engine.send(`set snowfall ${s.get_string('snowfall')}`);
             break;
-        case 'autumn': {
+        case 'mode': {
             const calm = !St.Settings.get().enable_animations;
-            this._engine.send(`mode ${s.get_boolean('autumn') ? 'autumn' : 'snow'} ${calm ? 1 : 0}`);
+            this._engine.send(`mode ${s.get_string('mode')} ${calm ? 1 : 0}`);
             break;
         }
+        case 'halloween-days':
+            this._engine.send(`set halloween ${s.get_string('halloween-days')}`);
+            break;
         case 'calm-fps':
             this._engine.send(`set calm-fps ${s.get_int('calm-fps')}`);
             break;
         case 'accumulate':
         case 'melt':
         case 'sharp':
-        case 'halloween':
         case 'idle-slowdown':
         case 'rest-when-hidden':
         case 'battery-slowdown':

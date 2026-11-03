@@ -23,6 +23,26 @@ const SIGN_VERTEX: &str = include_str!("shaders/sign.vert");
 const SIGN_FRAGMENT: &str = include_str!("shaders/sign.frag");
 const PUMPKIN_VERTEX: &str = include_str!("shaders/pumpkin.vert");
 const PUMPKIN_FRAGMENT: &str = include_str!("shaders/pumpkin.frag");
+const FIELD_FRAGMENT: &str = include_str!("shaders/field.frag");
+const GLASS_VERTEX: &str = include_str!("shaders/glass.vert");
+const GLASS_FRAGMENT: &str = include_str!("shaders/glass.frag");
+const DROP: &str = include_str!("shaders/drop.glsl");
+const FADE_VERTEX: &str = "#version 300 es
+void main() {
+    gl_Position = vec4(float(gl_VertexID & 1) * 2.0 - 1.0, float(gl_VertexID >> 1) * 2.0 - 1.0, 0.0, 1.0);
+}
+";
+const FADE_FRAGMENT: &str = "#version 300 es
+precision mediump float;
+out vec4 color;
+void main() {
+    color = vec4(0.0);
+}
+";
+
+fn included(source: &str) -> String {
+    source.replace("#include \"drop.glsl\"", DROP)
+}
 
 const SIGNS: [&[u8]; SIGN_CAPTIONS.len()] = [
     include_bytes!("../assets/signs/sign-00.png"),
@@ -89,6 +109,11 @@ pub struct Renderer {
     pile: Program,
     sign: Program,
     pumpkin: Program,
+    field: Program,
+    glass: Program,
+    fade: Program,
+    fields_drawable: bool,
+    fields: HashMap<(i32, i32), (GLuint, GLuint)>,
     sprite_vao: GLuint,
     empty_vao: GLuint,
     sprite_buffer: GLuint,
@@ -111,9 +136,14 @@ impl Renderer {
             let sprite = program(
                 &gl,
                 SPRITE_VERTEX,
-                SPRITE_FRAGMENT,
-                &["viewSize", "scale", "time", "light", "shadowTint", "rim", "lantern", "pumpkins", "shake", "panel", "masks", "maskCount", "autumn"],
+                &included(SPRITE_FRAGMENT),
+                &["viewSize", "scale", "time", "light", "shadowTint", "rim", "lantern", "pumpkins", "shake", "panel", "masks", "maskCount", "autumn", "glass"],
             )?;
+            let field = program(&gl, SPRITE_VERTEX, &included(FIELD_FRAGMENT), &["viewSize", "scale", "time", "lantern", "pumpkins", "shake", "panel"])?;
+            let glass = program(&gl, GLASS_VERTEX, GLASS_FRAGMENT, &["field", "light", "scale"])?;
+            let fade = program(&gl, FADE_VERTEX, FADE_FRAGMENT, &[])?;
+            let extensions = cstr((gl.GetString)(gl::EXTENSIONS));
+            let fields_drawable = extensions.contains("GL_EXT_color_buffer_float") || extensions.contains("GL_EXT_color_buffer_half_float");
             let pile = program(
                 &gl,
                 PILE_VERTEX,
@@ -167,7 +197,7 @@ impl Renderer {
             (gl.BindVertexArray)(vaos[0]);
             (gl.BindBuffer)(gl::ARRAY_BUFFER, buffer);
             let stride = size_of::<Sprite>() as i32;
-            let attributes: [(u32, i32, usize); 13] = [
+            let attributes: [(u32, i32, usize); 15] = [
                 (0, 2, 0),
                 (1, 2, 8),
                 (2, 1, 16),
@@ -181,6 +211,8 @@ impl Renderer {
                 (10, 2, 80),
                 (11, 3, 88),
                 (12, 2, 100),
+                (13, 2, 108),
+                (14, 4, 116),
             ];
             for (location, size, offset) in attributes {
                 (gl.EnableVertexAttribArray)(location);
@@ -202,6 +234,11 @@ impl Renderer {
                 pile,
                 sign,
                 pumpkin,
+                field,
+                glass,
+                fade,
+                fields_drawable,
+                fields: HashMap::new(),
                 sprite_vao: vaos[0],
                 empty_vao: vaos[1],
                 sprite_buffer: buffer,
@@ -224,6 +261,7 @@ impl Renderer {
         ambient: Ambient,
         time: f32,
         masks: &[[f32; 4]],
+        opacity: f32,
     ) -> Result<Frame, String> {
         let masks = &masks[..masks.len().min(MAX_MASKS)];
         let sprite_count = simulation.sprite_count();
@@ -272,6 +310,8 @@ impl Renderer {
         let panel = [0.0f32; 4];
         let autumn = if simulation.autumn() { 1.0 } else { 0.0 };
 
+        let glass = sprites > 0 && self.fields_drawable && simulation.has_glass_drops();
+        self.prepare_field(glass, size);
         let gl = &self.gl;
         unsafe {
             (gl.Viewport)(0, 0, size.0, size.1);
@@ -391,17 +431,86 @@ impl Renderer {
                     (gl.BufferData)(gl::ARRAY_BUFFER, (self.sprite_capacity * size_of::<Sprite>()) as isize, std::ptr::null(), gl::DYNAMIC_DRAW);
                 }
                 (gl.BufferSubData)(gl::ARRAY_BUFFER, 0, bytes, self.sprites.as_ptr().cast());
+                (gl.BindVertexArray)(self.sprite_vao);
+                let field = if glass { self.fields.get(&size).copied() } else { None };
+                if let Some((_, framebuffer)) = field {
+                    let p = &self.field;
+                    (gl.BindFramebuffer)(gl::FRAMEBUFFER, framebuffer);
+                    (gl.Clear)(gl::COLOR_BUFFER_BIT);
+                    (gl.BlendFunc)(gl::ONE, gl::ONE);
+                    (gl.UseProgram)(p.id);
+                    common(p);
+                    (gl.DrawArraysInstanced)(gl::TRIANGLE_STRIP, 0, 4, sprites as i32);
+                    (gl.BindFramebuffer)(gl::FRAMEBUFFER, 0);
+                    (gl.BlendFunc)(gl::ONE, gl::ONE_MINUS_SRC_ALPHA);
+                }
                 let p = &self.sprite;
                 (gl.UseProgram)(p.id);
-                (gl.BindVertexArray)(self.sprite_vao);
                 common(p);
                 set_masks(p, true);
+                (gl.Uniform1f)(p.at("glass"), if field.is_some() { 1.0 } else { 0.0 });
                 (gl.DrawArraysInstanced)(gl::TRIANGLE_STRIP, 0, 4, sprites as i32);
+                if let Some((texture, _)) = field {
+                    let p = &self.glass;
+                    (gl.BindVertexArray)(self.empty_vao);
+                    (gl.UseProgram)(p.id);
+                    (gl.ActiveTexture)(gl::TEXTURE0);
+                    (gl.BindTexture)(gl::TEXTURE_2D, texture);
+                    (gl.Uniform1i)(p.at("field"), 0);
+                    (gl.Uniform4f)(p.at("light"), light[0], light[1], light[2], light[3]);
+                    (gl.Uniform1f)(p.at("scale"), scale);
+                    (gl.DrawArrays)(gl::TRIANGLES, 0, 3);
+                }
+            }
+            if opacity < 1.0 {
+                (gl.BindVertexArray)(self.empty_vao);
+                (gl.UseProgram)(self.fade.id);
+                (gl.BlendColor)(0.0, 0.0, 0.0, opacity);
+                (gl.BlendFuncSeparate)(gl::ZERO, gl::CONSTANT_ALPHA, gl::ZERO, gl::CONSTANT_ALPHA);
+                (gl.DrawArrays)(gl::TRIANGLE_STRIP, 0, 4);
+                (gl.BlendFunc)(gl::ONE, gl::ONE_MINUS_SRC_ALPHA);
             }
             (gl.BindVertexArray)(0);
             check(gl, "rysowanie")?;
         }
         Ok(Frame { sprites, piles: shapes, extras })
+    }
+
+    fn prepare_field(&mut self, glass: bool, size: (i32, i32)) {
+        let gl = &self.gl;
+        unsafe {
+            if !glass {
+                for (_, (texture, framebuffer)) in self.fields.drain() {
+                    (gl.DeleteFramebuffers)(1, &framebuffer);
+                    (gl.DeleteTextures)(1, &texture);
+                }
+                return;
+            }
+            if self.fields.contains_key(&size) {
+                return;
+            }
+            let mut texture = 0;
+            (gl.GenTextures)(1, &mut texture);
+            (gl.BindTexture)(gl::TEXTURE_2D, texture);
+            (gl.TexParameteri)(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST);
+            (gl.TexParameteri)(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST);
+            (gl.TexParameteri)(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE);
+            (gl.TexParameteri)(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE);
+            (gl.TexImage2D)(gl::TEXTURE_2D, 0, gl::RG16F, size.0.max(1), size.1.max(1), 0, gl::RG, gl::HALF_FLOAT, std::ptr::null());
+            let mut framebuffer = 0;
+            (gl.GenFramebuffers)(1, &mut framebuffer);
+            (gl.BindFramebuffer)(gl::FRAMEBUFFER, framebuffer);
+            (gl.FramebufferTexture2D)(gl::FRAMEBUFFER, gl::COLOR_ATTACHMENT0, gl::TEXTURE_2D, texture, 0);
+            let complete = (gl.CheckFramebufferStatus)(gl::FRAMEBUFFER) == gl::FRAMEBUFFER_COMPLETE;
+            (gl.BindFramebuffer)(gl::FRAMEBUFFER, 0);
+            if complete {
+                self.fields.insert(size, (texture, framebuffer));
+            } else {
+                (gl.DeleteFramebuffers)(1, &framebuffer);
+                (gl.DeleteTextures)(1, &texture);
+                self.fields_drawable = false;
+            }
+        }
     }
 
     pub fn sprites(&self, count: usize) -> &[Sprite] {

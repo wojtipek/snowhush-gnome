@@ -271,8 +271,8 @@ class FakeSettings extends Emitter {
     }
 }
 const menuSettings = new FakeSettings({enabled: true, snowfall: 'heavy', language: '', accumulate: true, melt: true,
-    'snow-on-windows': true, 'over-windows': true, 'behind-windows': false, sharp: false, halloween: true,
-    'idle-slowdown': false, 'rest-when-hidden': false, 'battery-slowdown': false, autumn: false});
+    'snow-on-windows': true, 'over-windows': true, 'behind-windows': false, sharp: false, 'halloween-days': 'season',
+    'idle-slowdown': false, 'rest-when-hidden': false, 'battery-slowdown': false, mode: 'snow'});
 let cleared = 0, opened = 0;
 const {SnowIndicator} = await import(`${EXT}/indicator.js`);
 const indicator = new SnowIndicator(menuSettings, () => cleared++, () => opened++, '/ext');
@@ -280,7 +280,7 @@ const toggle = indicator.quickSettingsItems[0];
 const menuItems = () => toggle.menu.items.flatMap(i => i.items?.length ? i.items : [i]).filter(i => i.label);
 const labels = () => menuItems().map(i => i.label.text);
 const item = text => menuItems().find(i => i.label.text === text);
-assert.deepEqual(labels(), ['Śnieg', 'Jesienne liście', 'Bez opadów', 'Lekki', 'Umiarkowany', 'Gęsty', 'Zmienny', 'Zdmuchnij śnieg', 'Opcje']);
+assert.deepEqual(labels(), ['Śnieg', 'Jesienne liście', 'Deszcz', 'Bez opadów', 'Lekki', 'Umiarkowany', 'Gęsty', 'Zmienny', 'Zdmuchnij śnieg', 'Opcje']);
 assert.equal(toggle.title, 'Śnieg');
 assert.equal(toggle.subtitle, 'Gęsty');
 assert.equal(toggle.gicon.name, 'weather-snow-symbolic');
@@ -289,7 +289,7 @@ assert.equal(toggle.menu.header[0].name, 'weather-snow-symbolic');
 assert.equal(menuItems()[0].ornament, 2);
 assert.equal(menuItems()[1].ornament, 3);
 item('Jesienne liście').activate();
-assert.equal(menuSettings.values.autumn, true);
+assert.equal(menuSettings.values.mode, 'autumn');
 assert.equal(toggle.title, 'Liście');
 assert.equal(toggle.gicon.file.path, '/ext/icons/leaf-symbolic.svg');
 assert.equal(toggle.menu.header[1], 'Liście');
@@ -300,8 +300,14 @@ menuSettings.set_string('language', 'de');
 assert.equal(toggle.title, 'Laub');
 assert.ok(labels().includes('Herbstlaub') && labels().includes('Laub wegpusten'), `${labels()}`);
 menuSettings.set_string('language', '');
+item('Deszcz').activate();
+assert.equal(toggle.title, 'Deszcz');
+assert.equal(toggle.gicon.name, 'weather-showers-symbolic');
+assert.equal(menuItems()[2].ornament, 2);
+assert.equal(toggle._clearItem.visible, false, 'deszcz nic nie zostawia, nie ma czego zdmuchiwać');
 item('Śnieg').activate();
-assert.equal(menuSettings.values.autumn, false);
+assert.equal(menuSettings.values.mode, 'snow');
+assert.equal(toggle._clearItem.visible, true);
 assert.equal(toggle.title, 'Śnieg');
 assert.equal(toggle.gicon.name, 'weather-snow-symbolic');
 item('Lekki').activate();
@@ -319,12 +325,20 @@ const [snowGroup, languageGroup] = window.page.children;
 assert.equal(window.title, 'Snowhush dla GNOME');
 assert.equal(snowGroup.title, 'Śnieg');
 assert.deepEqual(snowGroup.children.map(r => r.title),
-    ['Gromadzenie', 'Topnienie', 'Śnieg na oknach', 'Płatki nad oknami', 'Za oknami', 'Ostrzejszy obraz', 'Halloween',
-        'Wolniej po 5 min bezczynności', 'Pauza, gdy okno zasłania śnieg', 'Wolniej na baterii']);
-assert.deepEqual(snowGroup.children.map(r => r.active), [true, true, true, true, false, false, true, false, false, false]);
-assert.equal(snowGroup.children[8].sensitive, false, 'pauza ma sens dopiero, gdy płatki są za oknami');
+    ['Gromadzenie', 'Topnienie', 'Śnieg na oknach', 'Płatki nad oknami', 'Za oknami', 'Ostrzejszy obraz',
+        'Wolniej po 5 min bezczynności', 'Pauza, gdy okno zasłania śnieg', 'Wolniej na baterii', 'Halloween']);
+assert.deepEqual(snowGroup.children.slice(0, 9).map(r => r.active), [true, true, true, true, false, false, false, false, false]);
+const halloweenRow = snowGroup.children[9];
+assert.deepEqual(halloweenRow.model.items, ['Od 30 października do 1 listopada', 'Zawsze', 'Wyłączone']);
+assert.equal(halloweenRow.selected, 0);
+halloweenRow.selected = 1;
+assert.equal(menuSettings.values['halloween-days'], 'always');
+menuSettings.set_string('halloween-days', 'off');
+assert.equal(halloweenRow.selected, 2);
+menuSettings.set_string('halloween-days', 'season');
+assert.equal(snowGroup.children[7].sensitive, false, 'pauza ma sens dopiero, gdy płatki są za oknami');
 menuSettings.set_boolean('over-windows', false);
-assert.equal(snowGroup.children[8].sensitive, true);
+assert.equal(snowGroup.children[7].sensitive, true);
 menuSettings.set_boolean('over-windows', true);
 const languageRow = languageGroup.children[0];
 assert.equal(languageRow.title, 'Język');
@@ -353,7 +367,7 @@ menuSettings.set_boolean('behind-windows', true);
 assert.equal(snowGroup.children[4].active, true);
 assert.equal(snowGroup.children[2].sensitive, false);
 assert.equal(snowGroup.children[3].sensitive, false);
-assert.equal(snowGroup.children[8].sensitive, true, 'za oknami pauza ma sens');
+assert.equal(snowGroup.children[7].sensitive, true, 'za oknami pauza ma sens');
 snowGroup.children[0].active = false;
 menuSettings.set_boolean('enabled', false);
 assert.equal(toggle.subtitle, null);
@@ -361,24 +375,27 @@ assert.equal(item('Zdmuchnij śnieg').sensitive, false);
 
 const {TRANSLATIONS} = await import(`${EXT}/i18n.js`);
 for (const [code, list] of Object.entries(TRANSLATIONS))
-    assert.equal(list.length, 24, `pełne tłumaczenie: ${code}`);
+    assert.equal(list.length, 28, `pełne tłumaczenie: ${code}`);
 
 const {default: SnowhushExtension} = await import(`${EXT}/extension.js`);
-const extSettings = new FakeSettings({...menuSettings.values, 'calm-fps': 20, enabled: false, autumn: true});
+const extSettings = new FakeSettings({...menuSettings.values, 'calm-fps': 20, enabled: false, mode: 'autumn'});
 const ext = new SnowhushExtension({path: '/ext'});
 ext.getSettings = () => extSettings;
 ext.enable();
 const extSent = [];
 ext._engine = {send: line => extSent.push(line), start() {}, stop() {}, setBehindWindows() {}, destroy() {}};
 ext._onEngineStarted();
-assert.ok(extSent.includes('set autumn 1'), 'start od razu w liściach, bez podmuchu');
+assert.ok(extSent.includes('set mode autumn'), 'start od razu w liściach, bez podmuchu');
+assert.ok(extSent.includes('set halloween season'));
 assert.ok(!extSent.some(l => l.startsWith('mode')));
 extSent.length = 0;
-extSettings.set_boolean('autumn', false);
+extSettings.set_string('mode', 'snow');
 assert.deepEqual(extSent, ['mode snow 0']);
 (await import('./mocks/gi-St.mjs')).default.Settings.get().enable_animations = false;
-extSettings.set_boolean('autumn', true);
-assert.deepEqual(extSent, ['mode snow 0', 'mode autumn 1']);
+extSettings.set_string('mode', 'rain');
+assert.deepEqual(extSent, ['mode snow 0', 'mode rain 1']);
+extSettings.set_string('halloween-days', 'always');
+assert.equal(extSent.at(-1), 'set halloween always');
 ext.disable();
 
 console.log('rozszerzenie: wszystkie testy przeszły');

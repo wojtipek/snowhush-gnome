@@ -137,7 +137,7 @@ impl Renderer {
                 &gl,
                 SPRITE_VERTEX,
                 &included(SPRITE_FRAGMENT),
-                &["viewSize", "scale", "time", "light", "shadowTint", "rim", "lantern", "pumpkins", "shake", "panel", "masks", "maskCount", "autumn", "glass"],
+                &["viewSize", "scale", "time", "light", "shadowTint", "rim", "lantern", "pumpkins", "shake", "panel", "masks", "maskCount", "autumn", "blossom", "wilt", "glass"],
             )?;
             let field = program(&gl, SPRITE_VERTEX, &included(FIELD_FRAGMENT), &["viewSize", "scale", "time", "lantern", "pumpkins", "shake", "panel"])?;
             let glass = program(&gl, GLASS_VERTEX, GLASS_FRAGMENT, &["field", "light", "scale"])?;
@@ -171,6 +171,8 @@ impl Renderer {
                     "masks",
                     "maskCount",
                     "autumn",
+                    "blossom",
+                    "wilt",
                     "drift",
                 ],
             )?;
@@ -308,7 +310,9 @@ impl Renderer {
         let shake = simulation.shake();
         let shake = [shake.x, shake.y];
         let panel = [0.0f32; 4];
-        let autumn = if simulation.autumn() { 1.0 } else { 0.0 };
+        let autumn = if simulation.leafy() { 1.0 } else { 0.0 };
+        let blossom = if simulation.blossom() { 1.0 } else { 0.0 };
+        let wilt = if simulation.wilts() { 1.0 } else { 0.0 };
 
         let glass = sprites > 0 && self.fields_drawable && simulation.has_glass_drops();
         self.prepare_field(glass, size);
@@ -332,6 +336,8 @@ impl Renderer {
                 (gl.Uniform4fv)(p.at("shadowTint"), 1, shadow_tint.as_ptr());
                 (gl.Uniform1f)(p.at("scale"), scale);
                 (gl.Uniform1f)(p.at("autumn"), autumn);
+                (gl.Uniform1f)(p.at("blossom"), blossom);
+                (gl.Uniform1f)(p.at("wilt"), wilt);
             };
             let set_masks = |p: &Program, on: bool| {
                 let count = if on { masks.len() } else { 0 };

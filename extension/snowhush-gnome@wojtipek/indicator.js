@@ -12,6 +12,7 @@ const MODES = [
     ['snow', 'Śnieg', 'Śnieg', 'Zdmuchnij śnieg'],
     ['autumn', 'Jesienne liście', 'Liście', 'Zdmuchnij liście'],
     ['rain', 'Deszcz', 'Deszcz', null],
+    ['blossom', 'Kwiaty wiśni', 'Płatki', 'Zdmuchnij płatki'],
 ];
 
 export const SNOWFALL = [
@@ -35,6 +36,7 @@ class SnowToggle extends QuickMenuToggle {
             snow: new Gio.ThemedIcon({name: ICON}),
             autumn: new Gio.FileIcon({file: Gio.File.new_for_path(`${path}/icons/leaf-symbolic.svg`)}),
             rain: new Gio.ThemedIcon({name: 'weather-showers-symbolic'}),
+            blossom: new Gio.FileIcon({file: Gio.File.new_for_path(`${path}/icons/blossom-symbolic.svg`)}),
         };
         settings.bind('enabled', this, 'checked', Gio.SettingsBindFlags.DEFAULT);
 

@@ -1,5 +1,8 @@
 use crate::geometry::V2;
 
+/// How steep a bed snow still clings to, as a rise over run: about 55 degrees.
+const CLING_SLOPE: f32 = 1.4;
+
 /// A height field of snow columns lying on a bed: the screen bottom, or the top edge of a window
 /// whose rounded corners curve the bed down at both ends.
 /// A droplet of rain's spray on a window's glass: from the left end of its top edge, and how big it is.
@@ -235,6 +238,14 @@ impl SnowLayer {
         }
     }
 
+    /// Moves the layer and what it remembers of its window's path up by `by`, as the screen's coordinates shift under
+    /// it, so it takes this for no motion of its window.
+    pub fn raise(&mut self, by: f32) {
+        self.origin.y += by;
+        self.track.y += by;
+        self.previous_base_y += by;
+    }
+
     pub fn refresh_top(&mut self) {
         self.top = self.heights.iter().copied().fold(0.0, f32::max);
     }
@@ -326,6 +337,9 @@ impl SnowLayer {
             return false;
         }
         let limit = repose * self.column_width;
+        // Snow clings to its bed: a layer may follow the bed down a rounded corner as far as it is no steeper than
+        // `CLING_SLOPE`, on top of the angle of repose its own surface keeps.
+        let steepest = CLING_SLOPE * self.column_width;
         let forward_first = self.parity;
         self.parity = !self.parity;
         let mut moved = false;
@@ -346,14 +360,17 @@ impl SnowLayer {
                     continue;
                 }
                 let difference = (b[i] + h[i]) - (b[i + 1] + h[i + 1]);
-                if difference > limit + 0.01 {
-                    let transfer = ((difference - limit) * 0.5).min(h[i]);
+                let fall = b[i] - b[i + 1];
+                let ahead = limit + fall.clamp(0.0, steepest);
+                let behind = limit + (-fall).clamp(0.0, steepest);
+                if difference > ahead + 0.01 {
+                    let transfer = ((difference - ahead) * 0.5).min(h[i]);
                     shift(h, p, transfer, i, i + 1);
                     if transfer > 0.0 {
                         moved = true;
                     }
-                } else if difference < -limit - 0.01 {
-                    let transfer = ((-difference - limit) * 0.5).min(h[i + 1]);
+                } else if difference < -behind - 0.01 {
+                    let transfer = ((-difference - behind) * 0.5).min(h[i + 1]);
                     shift(h, p, transfer, i + 1, i);
                     if transfer > 0.0 {
                         moved = true;

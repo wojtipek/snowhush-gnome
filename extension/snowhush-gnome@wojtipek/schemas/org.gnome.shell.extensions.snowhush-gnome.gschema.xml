@@ -71,9 +71,10 @@
         <choice value="snow"/>
         <choice value="autumn"/>
         <choice value="rain"/>
+        <choice value="blossom"/>
       </choices>
       <default>'snow'</default>
-      <summary>Co pada: śnieg, jesienne liście albo deszcz</summary>
+      <summary>Co pada: śnieg, jesienne liście, deszcz albo płatki kwiatów wiśni</summary>
     </key>
     <key name="language" type="s">
       <default>''</default>

@@ -105,6 +105,7 @@ fn parse_mode(text: &str) -> Option<Mode> {
         "snow" => Some(Mode::Snow),
         "autumn" => Some(Mode::Autumn),
         "rain" => Some(Mode::Rain),
+        "blossom" => Some(Mode::Blossom),
         _ => None,
     }
 }
@@ -167,6 +168,7 @@ mod tests {
         assert_eq!(parse("set halloween season").unwrap(), Command::Halloween(HalloweenDays::Season));
         assert_eq!(parse("mode rain 0").unwrap(), Command::Mode { mode: Mode::Rain, calm: false });
         assert_eq!(parse("set mode rain").unwrap(), Command::SetMode(Mode::Rain));
+        assert_eq!(parse("set mode blossom").unwrap(), Command::SetMode(Mode::Blossom));
         assert_eq!(parse("slide -6000").unwrap(), Command::Slide(-6000.0));
         assert_eq!(parse("idle 1").unwrap(), Command::Idle(true));
         assert_eq!(parse("mode autumn 0").unwrap(), Command::Mode { mode: Mode::Autumn, calm: false });

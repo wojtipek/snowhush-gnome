@@ -8,6 +8,9 @@ class Base extends Emitter {
     destroy() {}
 }
 export class PopupMenuSection extends Base {}
+export class PopupBaseMenuItem extends Base {
+    add_child(child) { this.child = child; }
+}
 export class PopupSeparatorMenuItem extends Base {}
 export class PopupMenuItem extends Base {
     _init(text) { super._init(); this.label = {text}; this.ornament = Ornament.NONE; }

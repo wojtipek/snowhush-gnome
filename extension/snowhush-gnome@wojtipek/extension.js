@@ -6,11 +6,18 @@ import {Extension, InjectionManager} from 'resource:///org/gnome/shell/extension
 
 import {Engine} from './engine.js';
 import {Scout} from './scout.js';
-import {SnowIndicator} from './indicator.js';
+import {SnowIndicator, activeModes} from './indicator.js';
+
+const OLD_SNOWFALL = {off: 0, light: 25, steady: 50, heavy: 75, variable: 50};
 
 export default class SnowhushExtension extends Extension {
     enable() {
         this._settings = this.getSettings();
+        const old = this._settings.get_user_value('snowfall');
+        if (old !== null) {
+            this._settings.set_int('intensity', OLD_SNOWFALL[old.unpack()] ?? 50);
+            this._settings.reset('snowfall');
+        }
         this._engine = new Engine(`${this.path}/bin/snowhush-engine`, () => this._onEngineStarted());
         this._scout = new Scout(this._engine);
         this._watchWorkspaceAnimation();
@@ -99,7 +106,8 @@ export default class SnowhushExtension extends Extension {
 
     _onEngineStarted() {
         const s = this._settings;
-        this._engine.send(`set snowfall ${s.get_string('snowfall')}`);
+        this._engine.send(`set intensity ${s.get_int('intensity') / 100}`);
+        this._engine.send(`set opacity ${s.get_int('opacity') / 100}`);
         this._engine.send(`set accumulate ${s.get_boolean('accumulate') ? 1 : 0}`);
         this._engine.send(`set melt ${s.get_boolean('melt') ? 1 : 0}`);
         this._engine.send(`set snow-on-windows ${this._snowOnWindows() ? 1 : 0}`);
@@ -109,7 +117,8 @@ export default class SnowhushExtension extends Extension {
         this._engine.send(`set sharp ${s.get_boolean('sharp') ? 1 : 0}`);
         this._engine.send(`set calm-fps ${s.get_int('calm-fps')}`);
         this._engine.send(`set halloween ${s.get_string('halloween-days')}`);
-        this._engine.send(`set mode ${s.get_string('mode')}`);
+        this._modes = activeModes(s).join(',');
+        this._engine.send(`set mode ${this._modes}`);
         if (this._running && this._scoutRunning)
             this._scout.sendAll();
     }
@@ -123,12 +132,21 @@ export default class SnowhushExtension extends Extension {
             else
                 this._stopSnow();
             break;
-        case 'snowfall':
-            this._engine.send(`set snowfall ${s.get_string('snowfall')}`);
+        case 'intensity':
+            this._engine.send(`set intensity ${s.get_int('intensity') / 100}`);
             break;
-        case 'mode': {
+        case 'opacity':
+            this._engine.send(`set opacity ${s.get_int('opacity') / 100}`);
+            break;
+        case 'mode':
+        case 'mixed':
+        case 'mix': {
+            const modes = activeModes(s).join(',');
+            if (modes === this._modes)
+                break;
+            this._modes = modes;
             const calm = !St.Settings.get().enable_animations;
-            this._engine.send(`mode ${s.get_string('mode')} ${calm ? 1 : 0}`);
+            this._engine.send(`mode ${modes} ${calm ? 1 : 0}`);
             break;
         }
         case 'halloween-days':

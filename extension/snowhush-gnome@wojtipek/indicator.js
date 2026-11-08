@@ -2,6 +2,7 @@ import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
+import {Slider} from 'resource:///org/gnome/shell/ui/slider.js';
 import {QuickMenuToggle, SystemIndicator} from 'resource:///org/gnome/shell/ui/quickSettings.js';
 
 import {_, setLanguage} from './i18n.js';
@@ -15,13 +16,30 @@ const MODES = [
     ['blossom', 'Kwiaty wiśni', 'Płatki', 'Zdmuchnij płatki'],
 ];
 
-export const SNOWFALL = [
-    ['off', 'Bez opadów'],
-    ['light', 'Lekki'],
-    ['steady', 'Umiarkowany'],
-    ['heavy', 'Gęsty'],
-    ['variable', 'Zmienny'],
-];
+export function activeModes(settings) {
+    return settings.get_boolean('mixed') ? settings.get_strv('mix') : [settings.get_string('mode')];
+}
+
+export function pickMode(settings, mode) {
+    if (settings.get_boolean('mixed')) {
+        const mix = settings.get_strv('mix');
+        if (mix.includes(mode))
+            return;
+        settings.set_strv('mix', [mix[1], mode]);
+    }
+    settings.set_string('mode', mode);
+}
+
+export function toggleMixed(settings) {
+    const mixed = !settings.get_boolean('mixed');
+    if (mixed) {
+        const mode = settings.get_string('mode');
+        const mix = settings.get_strv('mix');
+        const other = mix.find(m => m !== mode) ?? (mode === 'snow' ? 'autumn' : 'snow');
+        settings.set_strv('mix', [other, mode]);
+    }
+    settings.set_boolean('mixed', mixed);
+}
 
 const SnowToggle = GObject.registerClass(
 class SnowToggle extends QuickMenuToggle {
@@ -44,24 +62,30 @@ class SnowToggle extends QuickMenuToggle {
         const modeSection = new PopupMenu.PopupMenuSection();
         for (const [mode, text] of MODES) {
             const item = new PopupMenu.PopupMenuItem(text);
-            item.connect('activate', () => settings.set_string('mode', mode));
+            item.connect('activate', () => pickMode(settings, mode));
             modeSection.addMenuItem(item);
             this._modeItems.set(mode, item);
             this._labels.push([item.label, text]);
         }
+        this._mixedItem = new PopupMenu.PopupSwitchMenuItem('Mieszane', settings.get_boolean('mixed'));
+        this._mixedItem.connect('toggled', () => toggleMixed(settings));
+        modeSection.addMenuItem(this._mixedItem);
+        this._labels.push([this._mixedItem.label, 'Mieszane']);
         this.menu.addMenuItem(modeSection);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        this._snowfallItems = new Map();
-        const snowfallSection = new PopupMenu.PopupMenuSection();
-        for (const [value, text] of SNOWFALL) {
-            const item = new PopupMenu.PopupMenuItem(text);
-            item.connect('activate', () => settings.set_string('snowfall', value));
-            snowfallSection.addMenuItem(item);
-            this._snowfallItems.set(value, item);
-            this._labels.push([item.label, text]);
-        }
-        this.menu.addMenuItem(snowfallSection);
+        this._intensityLabel = new PopupMenu.PopupMenuItem('', {reactive: false});
+        this.menu.addMenuItem(this._intensityLabel);
+        this._intensityItem = new PopupMenu.PopupBaseMenuItem({activate: false});
+        this._intensity = new Slider(settings.get_int('intensity') / 100);
+        this._intensity.x_expand = true;
+        this._intensity.connect('notify::value', () => {
+            const value = Math.round(this._intensity.value * 100);
+            if (value !== settings.get_int('intensity'))
+                settings.set_int('intensity', value);
+        });
+        this._intensityItem.add_child(this._intensity);
+        this.menu.addMenuItem(this._intensityItem);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
         this._clearItem = new PopupMenu.PopupMenuItem('Zdmuchnij śnieg');
@@ -81,30 +105,34 @@ class SnowToggle extends QuickMenuToggle {
 
     _sync() {
         const language = this._settings.get_string('language');
-        const found = MODES.find(([value]) => value === this._settings.get_string('mode')) ?? MODES[0];
-        const [mode, , title, clear] = found;
-        if (language !== this._language || mode !== this._mode) {
-            this._language = language;
-            this._mode = mode;
+        const known = MODES.map(([value]) => value);
+        const active = activeModes(this._settings).filter(m => known.includes(m));
+        const modes = active.length ? active : ['snow'];
+        const key = `${language}|${modes.join(',')}`;
+        if (key !== this._mode) {
+            this._mode = key;
             setLanguage(language);
-            const icon = this._icons[mode];
+            const entries = modes.map(m => MODES.find(([value]) => value === m));
+            const newest = entries.at(-1);
+            const icon = this._icons[newest[0]];
             this.gicon = icon;
-            this.title = _(title);
+            this.title = entries.length > 1 ? _('Mieszane') : _(newest[2]);
             this.menu.setHeader(icon, this.title, _('Snowhush dla GNOME'));
-            this._clearItem.visible = clear !== null;
-            if (clear)
-                this._clearItem.label.text = _(clear);
+            const clears = entries.map(entry => entry[3]).filter(Boolean);
+            this._clearItem.visible = clears.length > 0;
+            this._clearItem.label.text = clears.length > 1 ? _('Zdmuchnij wszystko') : _(clears[0] ?? 'Zdmuchnij śnieg');
             for (const [label, text] of this._labels)
                 label.text = _(text);
         }
         for (const [value, item] of this._modeItems)
-            item.setOrnament(value === mode ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NO_DOT);
-        const snowfall = this._settings.get_string('snowfall');
-        for (const [value, item] of this._snowfallItems)
-            item.setOrnament(value === snowfall ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NO_DOT);
+            item.setOrnament(modes.includes(value) ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NO_DOT);
+        this._mixedItem.setToggleState(this._settings.get_boolean('mixed'));
+        const intensity = this._settings.get_int('intensity');
+        if (Math.round(this._intensity.value * 100) !== intensity)
+            this._intensity.value = intensity / 100;
+        this._intensityLabel.label.text = `${_('Intensywność')}: ${intensity}%`;
         this._clearItem.setSensitive(this.checked);
-        const text = SNOWFALL.find(([value]) => value === snowfall)?.[1];
-        this.subtitle = this.checked && text ? _(text) : null;
+        this.subtitle = this.checked ? `${intensity}%` : null;
     }
 
     destroy() {

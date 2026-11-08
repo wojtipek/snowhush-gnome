@@ -51,10 +51,11 @@ impl Screen {
         let surface = egl.create_window_surface(window.egl_window)?;
         egl.make_current(surface)?;
         egl.no_vsync();
-        let mut simulation = SnowSimulation::new(size.0 as f32, size.1 as f32, settings.snowfall);
+        let mut simulation = SnowSimulation::new(size.0 as f32, size.1 as f32, settings.intensity);
         simulation.thaws = settings.melt;
         simulation.accumulates = settings.accumulate;
-        simulation.set_mode(settings.mode);
+        simulation.set_modes(&settings.modes);
+        simulation.falling_opacity = settings.opacity;
         crate::log!("monitor {}: obszar {:?}, skala {}", monitor.index, monitor.area, monitor.scale);
         let mut screen = Screen {
             monitor,

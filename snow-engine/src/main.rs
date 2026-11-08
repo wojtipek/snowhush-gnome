@@ -230,9 +230,13 @@ impl App {
                 self.desktop.all_covered = all;
                 self.desktop.fullscreen = fullscreen.into_iter().collect::<HashSet<_>>();
             }
-            Command::Snowfall(snowfall) => {
-                self.settings.snowfall = snowfall;
-                self.screens.iter_mut().for_each(|s| s.simulation.set_snowfall(snowfall));
+            Command::Opacity(opacity) => {
+                self.settings.opacity = opacity;
+                self.screens.iter_mut().for_each(|s| s.simulation.falling_opacity = opacity);
+            }
+            Command::Intensity(intensity) => {
+                self.settings.intensity = intensity;
+                self.screens.iter_mut().for_each(|s| s.simulation.set_intensity(intensity));
             }
             Command::Accumulate(on) => {
                 self.settings.accumulate = on;
@@ -267,16 +271,18 @@ impl App {
                 self.update_halloween();
             }
             Command::Idle(on) => self.desktop.idle = on,
-            Command::Mode { mode, calm } => {
-                self.settings.mode = mode;
+            Command::Mode { modes, calm } => {
+                self.settings.modes = modes;
                 self.update_halloween();
                 let direction = self.screens.first().map_or(-1.0, |s| s.simulation.breeze_direction());
-                self.screens.iter_mut().for_each(|s| s.simulation.switch_mode(mode, direction, calm));
+                let modes = &self.settings.modes;
+                self.screens.iter_mut().for_each(|s| s.simulation.switch_modes(modes, direction, calm));
             }
             Command::SetMode(on) => {
-                self.settings.mode = on;
+                self.settings.modes = on;
                 self.update_halloween();
-                self.screens.iter_mut().for_each(|s| s.simulation.set_mode(on));
+                let modes = &self.settings.modes;
+                self.screens.iter_mut().for_each(|s| s.simulation.set_modes(modes));
             }
             Command::IdleSlowdown(on) => self.settings.idle_slowdown = on,
             Command::RestWhenHidden(on) => self.settings.rest_when_hidden = on,
@@ -292,7 +298,7 @@ impl App {
     }
 
     fn update_halloween(&mut self) {
-        let wanted = self.settings.mode == Mode::Snow
+        let wanted = self.settings.modes == [Mode::Snow]
             && match self.settings.halloween {
                 HalloweenDays::Always => true,
                 HalloweenDays::Season => self.season,
@@ -429,7 +435,7 @@ impl Stats {
 
 fn snapshot(path: &str, seconds: f32) -> Result<(), String> {
     use snow_core::geometry::{Rect, V2};
-    use snow_core::simulation::{SnowSimulation, Snowfall, WindowSurface};
+    use snow_core::simulation::{SnowSimulation, WindowSurface};
 
     let (width, height) = (960, 600);
     let egl = Egl::new(Platform::Surfaceless)?;
@@ -450,7 +456,7 @@ fn snapshot(path: &str, seconds: f32) -> Result<(), String> {
         }
     }
 
-    let mut simulation = SnowSimulation::new(width as f32, height as f32, Snowfall::Heavy);
+    let mut simulation = SnowSimulation::new(width as f32, height as f32, 0.75);
     simulation.thaws = false;
     let spooky = halloween::previewed();
     simulation.set_halloween(spooky);

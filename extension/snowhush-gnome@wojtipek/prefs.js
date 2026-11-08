@@ -46,6 +46,27 @@ export default class SnowhushPreferences extends ExtensionPreferences {
             labels.push([row, text]);
         }
 
+        const opacityRow = new Adw.ActionRow();
+        const opacity = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 10, 100, 5);
+        opacity.set_size_request(200, -1);
+        opacity.valign = Gtk.Align.CENTER;
+        opacity.draw_value = true;
+        opacity.value_pos = Gtk.PositionType.LEFT;
+        opacity.set_format_value_func((_scale, value) => `${Math.round(value)}%`);
+        opacity.set_value(settings.get_int('opacity'));
+        opacity.connect('value-changed', () => {
+            const value = Math.round(opacity.get_value());
+            if (value !== settings.get_int('opacity'))
+                settings.set_int('opacity', value);
+        });
+        settings.connect('changed::opacity', () => {
+            if (Math.round(opacity.get_value()) !== settings.get_int('opacity'))
+                opacity.set_value(settings.get_int('opacity'));
+        });
+        opacityRow.add_suffix(opacity);
+        snowGroup.add(opacityRow);
+        labels.push([opacityRow, 'Widoczność opadów']);
+
         const halloweenNames = Gtk.StringList.new(HALLOWEEN.map(([, text]) => text));
         const halloweenRow = new Adw.ComboRow({model: halloweenNames});
         snowGroup.add(halloweenRow);

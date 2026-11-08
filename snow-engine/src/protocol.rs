@@ -1,5 +1,5 @@
-use crate::desktop::{Area, HalloweenDays, Monitor, Power, Window, parse_snowfall};
-use snow_core::simulation::{Mode, Snowfall};
+use crate::desktop::{Area, HalloweenDays, Monitor, Power, Window};
+use snow_core::simulation::Mode;
 
 #[derive(Debug, PartialEq)]
 pub enum Command {
@@ -9,7 +9,8 @@ pub enum Command {
     Workspace,
     Cursor(Option<(f32, f32)>),
     Covered { all: bool, fullscreen: Vec<usize> },
-    Snowfall(Snowfall),
+    Intensity(f32),
+    Opacity(f32),
     Accumulate(bool),
     Melt(bool),
     SnowOnWindows(bool),
@@ -21,8 +22,8 @@ pub enum Command {
     Halloween(HalloweenDays),
     Slide(f32),
     Idle(bool),
-    Mode { mode: Mode, calm: bool },
-    SetMode(Mode),
+    Mode { modes: Vec<Mode>, calm: bool },
+    SetMode(Vec<Mode>),
     IdleSlowdown(bool),
     RestWhenHidden(bool),
     BatterySlowdown(bool),
@@ -61,7 +62,8 @@ pub fn parse(line: &str) -> Result<Command, String> {
             Ok(Command::Covered { all, fullscreen })
         }
         "set" => match rest.as_slice() {
-            ["snowfall", value] => parse_snowfall(value).map(Command::Snowfall).ok_or_else(bad),
+            ["intensity", value] => fraction(value).map(Command::Intensity).ok_or_else(bad),
+            ["opacity", value] => fraction(value).map(|v| Command::Opacity(v.max(0.1))).ok_or_else(bad),
             ["accumulate", _] => flag(rest.get(1)).map(Command::Accumulate),
             ["melt", _] => flag(rest.get(1)).map(Command::Melt),
             ["snow-on-windows", _] => flag(rest.get(1)).map(Command::SnowOnWindows),
@@ -77,7 +79,7 @@ pub fn parse(line: &str) -> Result<Command, String> {
             ["idle-slowdown", _] => flag(rest.get(1)).map(Command::IdleSlowdown),
             ["rest-when-hidden", _] => flag(rest.get(1)).map(Command::RestWhenHidden),
             ["battery-slowdown", _] => flag(rest.get(1)).map(Command::BatterySlowdown),
-            ["mode", value] => parse_mode(value).map(Command::SetMode).ok_or_else(bad),
+            ["mode", value] => parse_modes(value).map(Command::SetMode).ok_or_else(bad),
             _ => Err(bad()),
         },
         "power" => match rest.as_slice() {
@@ -89,8 +91,8 @@ pub fn parse(line: &str) -> Result<Command, String> {
         "idle" => flag(rest.first()).map(Command::Idle),
         "mode" => match rest[..] {
             [mode, calm] => {
-                let mode = parse_mode(mode).ok_or_else(bad)?;
-                flag(Some(&calm)).map(|calm| Command::Mode { mode, calm })
+                let modes = parse_modes(mode).ok_or_else(bad)?;
+                flag(Some(&calm)).map(|calm| Command::Mode { modes, calm })
             }
             _ => Err(bad()),
         },
@@ -98,6 +100,16 @@ pub fn parse(line: &str) -> Result<Command, String> {
         "quit" => Ok(Command::Quit),
         _ => Err(bad()),
     }
+}
+
+fn fraction(text: &str) -> Option<f32> {
+    text.parse::<f32>().ok().filter(|v| v.is_finite()).map(|v| v.clamp(0.0, 1.0))
+}
+
+fn parse_modes(text: &str) -> Option<Vec<Mode>> {
+    let modes: Vec<Mode> = text.split(',').map(parse_mode).collect::<Option<_>>()?;
+    let distinct = modes.len() < 2 || modes[0] != modes[1];
+    (!modes.is_empty() && modes.len() <= 2 && distinct).then_some(modes)
 }
 
 fn parse_mode(text: &str) -> Option<Mode> {
@@ -166,13 +178,13 @@ mod tests {
         assert_eq!(parse("set halloween 0").unwrap(), Command::Halloween(HalloweenDays::Off));
         assert_eq!(parse("set halloween always").unwrap(), Command::Halloween(HalloweenDays::Always));
         assert_eq!(parse("set halloween season").unwrap(), Command::Halloween(HalloweenDays::Season));
-        assert_eq!(parse("mode rain 0").unwrap(), Command::Mode { mode: Mode::Rain, calm: false });
-        assert_eq!(parse("set mode rain").unwrap(), Command::SetMode(Mode::Rain));
-        assert_eq!(parse("set mode blossom").unwrap(), Command::SetMode(Mode::Blossom));
+        assert_eq!(parse("mode rain 0").unwrap(), Command::Mode { modes: vec![Mode::Rain], calm: false });
+        assert_eq!(parse("set mode rain").unwrap(), Command::SetMode(vec![Mode::Rain]));
+        assert_eq!(parse("set mode blossom").unwrap(), Command::SetMode(vec![Mode::Blossom]));
         assert_eq!(parse("slide -6000").unwrap(), Command::Slide(-6000.0));
         assert_eq!(parse("idle 1").unwrap(), Command::Idle(true));
-        assert_eq!(parse("mode autumn 0").unwrap(), Command::Mode { mode: Mode::Autumn, calm: false });
-        assert_eq!(parse("mode snow 1").unwrap(), Command::Mode { mode: Mode::Snow, calm: true });
+        assert_eq!(parse("mode autumn 0").unwrap(), Command::Mode { modes: vec![Mode::Autumn], calm: false });
+        assert_eq!(parse("mode snow 1").unwrap(), Command::Mode { modes: vec![Mode::Snow], calm: true });
         assert!(parse("mode winter 0").is_err());
         assert_eq!(parse("set idle-slowdown 1").unwrap(), Command::IdleSlowdown(true));
         assert_eq!(parse("set rest-when-hidden 0").unwrap(), Command::RestWhenHidden(false));
@@ -184,7 +196,11 @@ mod tests {
         assert_eq!(parse("cursor 1.5 2").unwrap(), Command::Cursor(Some((1.5, 2.0))));
         assert_eq!(parse("cursor none").unwrap(), Command::Cursor(None));
         assert_eq!(parse("covered 0 1").unwrap(), Command::Covered { all: false, fullscreen: vec![1] });
-        assert_eq!(parse("set snowfall Heavy").unwrap(), Command::Snowfall(Snowfall::Heavy));
+        assert_eq!(parse("set intensity 0.75").unwrap(), Command::Intensity(0.75));
+        assert_eq!(parse("set opacity 0").unwrap(), Command::Opacity(0.1));
+        assert_eq!(parse("mode snow,rain 0").unwrap(), Command::Mode { modes: vec![Mode::Snow, Mode::Rain], calm: false });
+        assert!(parse("mode snow,snow 0").is_err());
+        assert!(parse("set intensity nan").is_err());
         assert_eq!(parse("set melt 0").unwrap(), Command::Melt(false));
         assert_eq!(parse("set snow-on-windows 1").unwrap(), Command::SnowOnWindows(true));
         assert_eq!(parse("set over-windows 0").unwrap(), Command::OverWindows(false));
@@ -193,7 +209,7 @@ mod tests {
         assert_eq!(parse("power saver").unwrap(), Command::Power(Power::Saver));
         assert_eq!(parse("quit").unwrap(), Command::Quit);
         assert!(parse("windows x").is_err());
-        assert!(parse("set snowfall blizzard").is_err());
+        assert!(parse("set mode snow,rain,autumn").is_err());
         assert!(parse("monitors 0:1,2,3").is_err());
     }
 }

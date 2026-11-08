@@ -24,6 +24,7 @@ layout(location = 11) in vec3 leaf;
 layout(location = 12) in vec2 spin;
 layout(location = 13) in vec2 rain;
 layout(location = 14) in vec4 drop;
+layout(location = 15) in float petal;
 
 out vec2 vCoord;
 out float vAlpha;
@@ -42,6 +43,7 @@ flat out vec4 vLeaf;
 flat out vec4 vSmear;
 flat out vec4 vRain;
 flat out vec4 vDrop;
+flat out float vPetal;
 
 float flicker(float t, float seed) {
     return 0.86 + 0.08 * sin(t * 11.0 + seed * 2.1) + 0.06 * sin(t * 29.0 + 1.3 + seed * 4.3);
@@ -80,6 +82,7 @@ void main() {
     vWarm = candlelight(position);
     vRain = vec4(0.0);
     vDrop = vec4(0.0);
+    vPetal = petal;
     if (rain.x > 4.5) {
         float thick = max(size * scale, 1.0);
         vec2 piece = velocity * scale;

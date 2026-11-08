@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use snow_core::geometry::Rect;
-use snow_core::simulation::{Mode, Snowfall, WindowSurface};
+use snow_core::simulation::{Mode, WindowSurface};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HalloweenDays {
@@ -107,9 +107,10 @@ mod walls_tests {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Settings {
-    pub snowfall: Snowfall,
+    pub intensity: f32,
+    pub opacity: f32,
     pub accumulate: bool,
     pub melt: bool,
     pub snow_on_windows: bool,
@@ -120,13 +121,14 @@ pub struct Settings {
     pub idle_slowdown: bool,
     pub rest_when_hidden: bool,
     pub battery_slowdown: bool,
-    pub mode: Mode,
+    pub modes: Vec<Mode>,
 }
 
 impl Default for Settings {
     fn default() -> Settings {
         Settings {
-            snowfall: Snowfall::Steady,
+            intensity: 0.5,
+            opacity: 1.0,
             accumulate: true,
             melt: true,
             snow_on_windows: true,
@@ -137,7 +139,7 @@ impl Default for Settings {
             idle_slowdown: false,
             rest_when_hidden: false,
             battery_slowdown: false,
-            mode: Mode::Snow,
+            modes: vec![Mode::Snow],
         }
     }
 }
@@ -270,6 +272,4 @@ fn intersects(a: &Rect, b: &Rect) -> bool {
     a.min_x() < b.max_x() && b.min_x() < a.max_x() && a.min_y() < b.max_y() && b.min_y() < a.max_y()
 }
 
-pub fn parse_snowfall(text: &str) -> Option<Snowfall> {
-    Snowfall::ALL.iter().copied().find(|s| s.title().eq_ignore_ascii_case(text))
-}
+

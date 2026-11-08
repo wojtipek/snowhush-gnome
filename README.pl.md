@@ -32,7 +32,8 @@ Wszystko trafia do jednego folderu: `~/.local/share/gnome-shell/extensions/snowh
 Otwórz **Szybkie ustawienia** (prawy górny róg, tam gdzie Wi-Fi i Bluetooth) i znajdź kafelek **Śnieg**. Kliknięcie kafelka włącza i wyłącza śnieg, a strzałka obok otwiera menu:
 
 - **Śnieg**, **Jesienne liście**, **Deszcz** albo **Kwiaty wiśni**: co pada. Przy zmianie podmuch zwiewa to, co leży, a potem z góry zaczyna padać nowe. Kafelek zmienia wtedy nazwę i ikonę. Deszcz rozpryskuje się na oknach i spływa kroplami po ich szybach
-- **Opady**: bez opadów, lekki, umiarkowany, gęsty albo zmienny
+- **Mieszane**: dwie pogody naraz, na przykład śnieg z deszczem. Po włączeniu zaznacza się dwie, a zaznaczenie trzeciej odznacza tę wybraną najdawniej
+- **Intensywność**: suwak od 0 do 100%
 - **Zdmuchnij śnieg** (albo **Zdmuchnij liście** czy **Zdmuchnij płatki**; przy deszczu tej pozycji nie ma): podmuch wiatru zwiewa cały śnieg, także z okien na innych obszarach roboczych
 - **Opcje**: otwiera okno ustawień
 
@@ -42,6 +43,7 @@ W oknie ustawień (dostępnym też przy rozszerzeniu w aplikacji *Rozszerzenia
 - **Śnieg na oknach**, **Płatki nad oknami** (po wyłączeniu płatki chowają się za oknami, a śnieg na krawędziach okien zostaje)
 - **Za oknami**: śnieg tylko na tapecie
 - **Ostrzejszy obraz**: rysowanie w pełnej rozdzielczości ekranu zamiast w skali GNOME (więcej pracy dla karty graficznej)
+- **Widoczność opadów**: suwak od 10 do 100%, przy mniejszych wartościach to, co spada, jest bardziej przezroczyste
 - **Halloween**: z zasp wstają duchy ze śniegu, w śniegu świecą dynie, a kursor niesie świeczkę. Do wyboru: od 30 października do 1 listopada (domyślnie), zawsze albo wyłączone. Działa tylko przy śniegu
 - **Wolniej po 5 min bezczynności**: po pięciu minutach bez ruchu myszą i klawiaturą śnieg zwalnia do 10 klatek na sekundę i przyspiesza, gdy wrócisz
 - **Pauza, gdy okno zasłania śnieg**: przy wyłączonych **Płatkach nad oknami** (albo włączonym **Za oknami**) śnieg staje, gdy okno zasłania cały ekran

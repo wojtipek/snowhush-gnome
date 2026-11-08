@@ -18,8 +18,6 @@ uniform vec4 pumpkins[3];
 uniform vec4 occluders[16];
 uniform sampler2D heights;
 uniform vec4 panel;
-uniform float autumn;
-uniform float blossom;
 uniform float wilt;
 uniform float drift;
 
@@ -59,6 +57,8 @@ float hash(vec2 p) {
     return fract(p.x * p.y);
 }
 
+#include "leaves.glsl"
+
 float noise(float x) {
     float i = floor(x);
     float f = fract(x);
@@ -80,45 +80,62 @@ float saturate(float x) {
 }
 
 vec3 petalColor(float seed) {
-    float k = fract(seed * 7.13);
-    vec3 c = k < 0.35 ? vec3(1.0, 0.85, 0.89)
-        : k < 0.7 ? vec3(0.99, 0.76, 0.84)
-        : k < 0.88 ? vec3(0.97, 0.66, 0.78)
-        : vec3(1.0, 0.93, 0.95);
-    return c * (0.94 + 0.08 * fract(seed * 31.7));
+    return PETAL_RINGS[petalTone(seed) * 3 + 1] * (0.94 + 0.08 * fract(seed * 31.7));
 }
 
 vec3 withered(float seed) {
     return vec3(0.78, 0.6, 0.49) * (0.86 + 0.18 * fract(seed * 17.3));
 }
 
-vec3 litter(vec2 point) {
-    float spacing = blossom > 0.5 ? 4.6 : 6.5;
+vec4 litterAt(vec2 point, float petals, float density) {
+    float spacing = petals > 0.5 ? 4.6 : 6.5;
     vec2 cell = floor(point / spacing);
     float top = -1.0;
     float rim = 0.0;
-    vec3 color = blossom > 0.5 ? vec3(0.86, 0.68, 0.74) : vec3(0.34, 0.19, 0.08);
+    bool petal = petals > 0.5;
+    vec3 color = mix(vec3(0.34, 0.19, 0.08), vec3(0.86, 0.68, 0.74), petals);
     for (int j = -1; j <= 1; j++) {
         for (int i = -1; i <= 1; i++) {
             for (int k = 0; k < 3; k++) {
                 vec2 c = cell + vec2(i, j) + float(k) * 0.37;
+                if (hash(c + 13.7) >= density) continue;
+                bool p = hash(c + 17.3) < petals;
                 vec2 d = point - (cell + vec2(i, j) + vec2(hash(c + 7.1), hash(c + 3.3))) * spacing;
                 float angle = hash(c + 11.7) * 6.2832;
                 vec2 q = vec2(cos(angle) * d.x + sin(angle) * d.y, -sin(angle) * d.x + cos(angle) * d.y);
-                float size = blossom > 0.5 ? 3.2 + 1.6 * hash(c + 2.9) : 3.8 + 2.4 * hash(c + 2.9);
+                float size = p ? 3.2 + 1.6 * hash(c + 2.9) : 3.8 + 2.4 * hash(c + 2.9);
                 float t = q.x / size;
-                float inside = (1.0 - t * t) * size * (blossom > 0.5 ? 0.62 : 0.45) - abs(q.y);
+                float inside = (1.0 - t * t) * size * 0.62 - abs(q.y);
+                int kind = 0;
+                vec2 l = vec2(0.0, 0.0);
+                float reach = 1.0;
+                if (!p) {
+                    inside = -1.0;
+                    if (dot(q, q) < size * size * LEAF_BOUND) {
+                        kind = leafKind(hash(c + 0.5));
+                        l = q / size - vec2(LEAF_FRAME[kind].x, 0.0);
+                        float far = length(l);
+                        if (far < LEAF_EXTENT[kind].x) {
+                            reach = leafReach(kind, atan(l.y, l.x));
+                            inside = (reach - far) * size;
+                        }
+                    }
+                }
                 float z = hash(c + 5.9);
                 if (inside > 0.0 && z > top) {
                     top = z;
                     rim = inside;
-                    color = blossom > 0.5 ? petalColor(hash(c + 0.5)) : leafColor(hash(c + 0.5));
-                    if (blossom > 0.5 && hash(c + 9.1) < 0.35 * wilt) color = mix(color, withered(hash(c + 0.5)), 0.3 + 0.6 * hash(c + 4.4));
+                    petal = p;
+                    float outward = clamp(length(l) / max(reach, 1e-3), 0.0, 1.0);
+                    vec3 middle = LEAF_RINGS[kind * 3], halfway = LEAF_RINGS[kind * 3 + 1], edge = LEAF_RINGS[kind * 3 + 2];
+                    vec3 leaf = (outward < 0.5 ? mix(middle, halfway, outward * 2.0) : mix(halfway, edge, outward * 2.0 - 1.0)) * (0.86 + 0.26 * fract(hash(c + 0.5) * 31.7));
+                    color = p ? petalColor(hash(c + 0.5)) : leaf;
+                    if (p && hash(c + 9.1) < 0.35 * wilt) color = mix(color, withered(hash(c + 0.5)), 0.3 + 0.6 * hash(c + 4.4));
                 }
             }
         }
     }
-    return color * ((blossom > 0.5 ? 0.86 : 0.7) + (blossom > 0.5 ? 0.14 : 0.3) * smoothstep(0.0, 0.7, rim));
+    return vec4(color * (petal ? 0.8 + 0.2 * smoothstep(0.0, 0.3, rim) : 0.7 + 0.3 * smoothstep(0.0, 0.7, rim)), top >= 0.0 ? 1.0 : 0.0);
 }
 
 float flicker(float t, float seed) {
@@ -151,9 +168,11 @@ void main() {
     vec2 grain = vec2(x - drift, vLocal.y);
     float level = heightAt(heightOffset, x);
     float bed = heightAt(heightOffset + columnCount, x);
-    if (autumn > 0.5) {
-        level -= 2.5;
-        level += (noise(grain.x * 0.4) - 0.5) * 2.4 * clamp((level - bed) / 4.0, 0.0, 1.0);
+    float leaves = heightAt(heightOffset + 2 * columnCount, x);
+    float petals = heightAt(heightOffset + 3 * columnCount, x);
+    if (leaves > 0.0) {
+        level -= 2.5 * leaves;
+        level += (noise(grain.x * 0.4) - 0.5) * 2.4 * clamp((level - bed) / 4.0, 0.0, 1.0) * leaves;
     }
     float depth = level - vLocal.y;
     float coverage = clamp(depth * scale + 0.5, 0.0, 1.0)
@@ -164,13 +183,8 @@ void main() {
     float slope = (heightAt(heightOffset, x + 2.0) - heightAt(heightOffset, x - 2.0)) * 0.25;
     float lit = dot(normalize(vec2(-slope, 1.0)), normalize(vec2(-0.5, 1.0)));
 
-    vec3 color;
-    if (autumn > 0.5) {
-        color = litter(grain);
-        vec3 deep = blossom > 0.5 ? vec3(0.8, 0.66, 0.72) : vec3(0.62, 0.54, 0.5);
-        color = mix(color, color * deep, clamp(1.0 - exp(-depth / 18.0), 0.0, 1.0) * 0.6);
-        color *= 0.84 + 0.2 * lit;
-    } else {
+    vec3 color = vec3(0.0);
+    if (leaves < 1.0) {
         vec3 shadow = mix(vec3(0.72, 0.78, 0.88), shadowTint.rgb, shadowTint.a);
         vec3 surface = mix(vec3(0.925, 0.94, 0.965), min(shadowTint.rgb * 1.18, vec3(1.0)), shadowTint.a * 0.2);
         float shade = (1.0 - exp(-depth / 30.0)) * 0.32 + (1.0 - lit) * 0.6 * exp(-depth / 5.0);
@@ -184,9 +198,17 @@ void main() {
             color = mix(color, vec3(1.0), twinkle * exp(-depth / 7.0));
         }
     }
+    float leafy = 0.0;
+    if (leaves > 0.0) {
+        vec4 fallen = litterAt(grain, petals, leaves);
+        leafy = max(fallen.a, smoothstep(0.55, 0.95, leaves));
+        vec3 deep = mix(vec3(0.62, 0.54, 0.5), vec3(0.8, 0.66, 0.72), petals);
+        vec3 leaf = mix(fallen.rgb, fallen.rgb * deep, clamp(1.0 - exp(-depth / 18.0), 0.0, 1.0) * 0.6) * (0.84 + 0.2 * lit);
+        color = mix(color, leaf, leafy);
+    }
 
-    color *= autumn > 0.5 ? mix(vec3(1.0), light.rgb, 0.4) : light.rgb;
-    color = mix(color, rim.rgb, rim.a * exp(-depth / 2.5) * (1.0 - autumn));
+    color *= mix(light.rgb, mix(vec3(1.0), light.rgb, 0.4), leafy);
+    color = mix(color, rim.rgb, rim.a * exp(-depth / 2.5) * (1.0 - leafy));
     color = mix(color, candle, candlelight(world) * (0.35 + 0.65 * exp(-depth / 14.0)) * 0.55);
     fragment = vec4(color * coverage, coverage);
 }

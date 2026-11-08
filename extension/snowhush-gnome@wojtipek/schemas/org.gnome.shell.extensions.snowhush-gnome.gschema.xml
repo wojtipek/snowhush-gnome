@@ -14,7 +14,25 @@
     </key>
     <key name="snowfall" enum="org.gnome.shell.extensions.snowhush-gnome.Snowfall">
       <default>'steady'</default>
-      <summary>Opady śniegu</summary>
+      <summary>Opady śniegu (stare ustawienie, przeliczane na intensywność)</summary>
+    </key>
+    <key name="intensity" type="i">
+      <range min="0" max="100"/>
+      <default>50</default>
+      <summary>Intensywność opadów w procentach</summary>
+    </key>
+    <key name="opacity" type="i">
+      <range min="10" max="100"/>
+      <default>100</default>
+      <summary>Widoczność tego, co spada, w procentach</summary>
+    </key>
+    <key name="mixed" type="b">
+      <default>false</default>
+      <summary>Dwie pogody naraz</summary>
+    </key>
+    <key name="mix" type="as">
+      <default>['autumn', 'snow']</default>
+      <summary>Dwie pogody, które padają razem</summary>
     </key>
     <key name="accumulate" type="b">
       <default>true</default>

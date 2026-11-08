@@ -190,12 +190,12 @@ mod tests {
 #[cfg(test)]
 mod measure {
     use super::*;
-    use snow_core::simulation::{SnowSimulation, Snowfall};
+    use snow_core::simulation::SnowSimulation;
 
     #[test]
     #[ignore]
     fn coverage_on_a_laptop_screen() {
-        for snowfall in [Snowfall::Light, Snowfall::Steady, Snowfall::Heavy] {
+        for snowfall in [0.25, 0.5, 0.75] {
             let mut simulation = SnowSimulation::new(1920.0, 1171.0, snowfall);
             let mut damage = Damage::new();
             let mut buffer = vec![Sprite::default(); 20000];

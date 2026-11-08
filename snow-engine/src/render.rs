@@ -27,6 +27,7 @@ const FIELD_FRAGMENT: &str = include_str!("shaders/field.frag");
 const GLASS_VERTEX: &str = include_str!("shaders/glass.vert");
 const GLASS_FRAGMENT: &str = include_str!("shaders/glass.frag");
 const DROP: &str = include_str!("shaders/drop.glsl");
+const LEAVES: &str = include_str!("shaders/leaves.glsl");
 const FADE_VERTEX: &str = "#version 300 es
 void main() {
     gl_Position = vec4(float(gl_VertexID & 1) * 2.0 - 1.0, float(gl_VertexID >> 1) * 2.0 - 1.0, 0.0, 1.0);
@@ -41,7 +42,7 @@ void main() {
 ";
 
 fn included(source: &str) -> String {
-    source.replace("#include \"drop.glsl\"", DROP)
+    source.replace("#include \"drop.glsl\"", DROP).replace("#include \"leaves.glsl\"", LEAVES)
 }
 
 const SIGNS: [&[u8]; SIGN_CAPTIONS.len()] = [
@@ -147,7 +148,7 @@ impl Renderer {
             let pile = program(
                 &gl,
                 PILE_VERTEX,
-                PILE_FRAGMENT,
+                &included(PILE_FRAGMENT),
                 &[
                     "viewSize",
                     "scale",
@@ -199,7 +200,7 @@ impl Renderer {
             (gl.BindVertexArray)(vaos[0]);
             (gl.BindBuffer)(gl::ARRAY_BUFFER, buffer);
             let stride = size_of::<Sprite>() as i32;
-            let attributes: [(u32, i32, usize); 15] = [
+            let attributes: [(u32, i32, usize); 16] = [
                 (0, 2, 0),
                 (1, 2, 8),
                 (2, 1, 16),
@@ -215,6 +216,7 @@ impl Renderer {
                 (12, 2, 100),
                 (13, 2, 108),
                 (14, 4, 116),
+                (15, 1, 132),
             ];
             for (location, size, offset) in attributes {
                 (gl.EnableVertexAttribArray)(location);

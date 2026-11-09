@@ -33,14 +33,15 @@ Open **Quick Settings** (top-right corner, where Wi-Fi and Bluetooth are) and fi
 
 - **Snow**, **Autumn leaves**, **Rain** or **Cherry blossom**: what falls. On a switch, a gust clears what is lying around, then the new kind starts falling from the top. The tile changes its name and icon. Rain splashes on the windows and runs down their glass in drops
 - **Mixed**: two weathers at once, for example snow with rain. When on, two are ticked, and ticking a third unticks the one picked longest ago
+- **Accumulation**: where snow settles: **At the bottom of the screen** and **On windows** (each can be turned off; rain still splashes at the bottom)
 - **Intensity**: a slider from 0 to 100%
 - **Blow the snow away** (or **Blow the leaves away**, **Blow the petals away**; not shown with rain): a gust clears all the snow, including snow on windows on other workspaces
 - **Options**: opens the settings window
 
 The settings window (also under the extension in the *Extensions* app) has:
 
-- **Accumulation**, **Melting**
-- **Snow on windows**, **Flakes over windows** (turn off to keep the flakes behind windows while the snow on their edges stays)
+- **Melting**
+- **Flakes over windows** (turn off to keep the flakes behind windows while the snow on their edges stays)
 - **Behind windows**: snow only on the wallpaper
 - **Sharper image**: draws at the full screen resolution instead of the GNOME scale (uses more GPU)
 - **Visibility of what falls**: a slider from 10 to 100%; lower values make what falls more see-through

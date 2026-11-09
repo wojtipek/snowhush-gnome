@@ -36,7 +36,11 @@
     </key>
     <key name="accumulate" type="b">
       <default>true</default>
-      <summary>Śnieg się gromadzi</summary>
+      <summary>Śnieg się gromadzi (stare ustawienie, przenoszone na ground i snow-on-windows)</summary>
+    </key>
+    <key name="ground" type="b">
+      <default>true</default>
+      <summary>Śnieg osiada na dole ekranu</summary>
     </key>
     <key name="melt" type="b">
       <default>true</default>

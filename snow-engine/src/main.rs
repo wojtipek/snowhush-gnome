@@ -10,12 +10,13 @@ mod render;
 mod screen;
 mod wl;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::io::Write;
 use std::time::{Duration, Instant};
 
 use snow_core::halloween;
-use snow_core::simulation::Mode;
+use snow_core::geometry::V2;
+use snow_core::simulation::{Borrowed, Mapping, Mode, Stray, WindowId};
 
 use desktop::{Area, Desktop, HalloweenDays, Monitor, Power, Settings};
 use egl::{Egl, Platform};
@@ -77,6 +78,8 @@ struct App {
     started: Instant,
     chores_at: Instant,
     light_at: Instant,
+    owners: HashMap<WindowId, usize>,
+    owners_seen: u64,
     stats: Stats,
     quit: bool,
 }
@@ -107,6 +110,8 @@ fn run(standalone: bool, size: (i32, i32)) -> Result<(), String> {
         started: now,
         chores_at: now,
         light_at: now + Duration::from_secs(60),
+        owners: HashMap::new(),
+        owners_seen: u64::MAX,
         stats: Stats::new(now),
         quit: false,
     };
@@ -238,9 +243,13 @@ impl App {
                 self.settings.intensity = intensity;
                 self.screens.iter_mut().for_each(|s| s.simulation.set_intensity(intensity));
             }
-            Command::Accumulate(on) => {
-                self.settings.accumulate = on;
-                self.screens.iter_mut().for_each(|s| s.simulation.accumulates = on);
+            Command::Ground(on) => {
+                self.settings.ground = on;
+                let accumulates = self.settings.accumulates();
+                self.screens.iter_mut().for_each(|s| {
+                    s.simulation.ground_settles = on;
+                    s.simulation.accumulates = accumulates;
+                });
             }
             Command::Melt(on) => {
                 self.settings.melt = on;
@@ -248,6 +257,8 @@ impl App {
             }
             Command::SnowOnWindows(on) => {
                 self.settings.snow_on_windows = on;
+                let accumulates = self.settings.accumulates();
+                self.screens.iter_mut().for_each(|s| s.simulation.accumulates = accumulates);
                 if !on {
                     self.screens.iter_mut().for_each(Screen::drop_window_snow);
                 }
@@ -317,6 +328,104 @@ impl App {
         self.screens.iter_mut().for_each(|s| s.simulation.set_density(density));
     }
 
+    fn hand_over(&mut self, now: Instant) {
+        if self.owners_seen == self.desktop.generation {
+            return;
+        }
+        self.owners_seen = self.desktop.generation;
+        let owners: HashMap<WindowId, usize> =
+            self.desktop.windows.iter().filter_map(|w| self.desktop.owner(w).map(|o| (w.id as WindowId, o))).collect();
+        for (&id, &owner) in &owners {
+            if let Some(&previous) = self.owners.get(&id)
+                && previous != owner
+            {
+                self.move_snow(id, previous, owner, now);
+            }
+        }
+        self.owners = owners;
+    }
+
+    fn move_snow(&mut self, id: WindowId, from: usize, to: usize, now: Instant) {
+        let find = |index: usize| self.screens.iter().position(|s| s.monitor.index == index);
+        let (Some(a), Some(b)) = (find(from), find(to)) else { return };
+        let Some(snow) = self.screens[a].simulation.take_window(id) else { return };
+        let (old, new) = (self.screens[a].monitor.area, self.screens[b].monitor.area);
+        let shift = V2::new((old.x - new.x) as f32, ((new.y + new.height) - (old.y + old.height)) as f32);
+        self.screens[b].simulation.adopt_window(id, snow, Mapping::shift(shift));
+        self.screens[a].rewatch();
+        self.screens[b].rewatch();
+        self.screens[b].wake(now);
+    }
+
+    fn lend(&mut self, now: Instant) {
+        for index in 0..self.screens.len() {
+            if self.screens[index].next_due > now {
+                continue;
+            }
+            let borrowed = self.borrowed(index);
+            self.screens[index].simulation.set_borrowed(borrowed);
+        }
+    }
+
+    fn borrowed(&self, index: usize) -> Vec<Borrowed> {
+        let screen = &self.screens[index];
+        let here = screen.monitor.area;
+        let mut borrowed = Vec::new();
+        for window in &self.desktop.windows {
+            let id = window.id as WindowId;
+            let Some(&owner) = self.owners.get(&id).filter(|&&owner| owner != screen.monitor.index) else { continue };
+            let near = window.x < here.x + here.width
+                && window.x + window.width > here.x
+                && window.y - 300 < here.y + here.height
+                && window.y + 20 > here.y;
+            let Some(home) = self.screens.iter().find(|other| other.monitor.index == owner).filter(|_| near) else { continue };
+            let Some(lent) = home.simulation.lend(id) else { continue };
+            let there = home.monitor.area;
+            let lent = lent.mapped(Mapping::shift(V2::new((there.x - here.x) as f32, ((here.y + here.height) - (there.y + there.height)) as f32)));
+            let [left, bottom, right, top] = lent.bounds();
+            if right > 0.0 && left < here.width as f32 && top > 0.0 && bottom < here.height as f32 {
+                borrowed.push(lent);
+            }
+        }
+        borrowed
+    }
+
+    fn pass_snow(&mut self) {
+        for index in 0..self.screens.len() {
+            let here = self.screens[index].monitor.area;
+            for caught in self.screens[index].simulation.take_caught() {
+                let Some(&owner) = self.owners.get(&caught.id) else { continue };
+                let Some(home) = self.screens.iter_mut().find(|other| other.monitor.index == owner) else { continue };
+                let shift = V2::new((here.x - home.monitor.area.x) as f32, 0.0);
+                home.simulation.catch(&caught, Mapping::shift(shift));
+            }
+            let mut passed: Vec<(usize, Vec<Stray>)> = Vec::new();
+            for stray in self.screens[index].simulation.take_strays() {
+                let point = stray.position();
+                let (x, y) = (here.x as f32 + point.x, (here.y + here.height) as f32 - point.y);
+                let Some(next) = self.screens.iter().enumerate().position(|(other, screen)| {
+                    let there = screen.monitor.area;
+                    other != index
+                        && !self.desktop.covered(screen.monitor.index)
+                        && x >= there.x as f32
+                        && x < (there.x + there.width) as f32
+                        && y < (there.y + there.height) as f32
+                }) else {
+                    continue;
+                };
+                match passed.iter_mut().find(|(other, _)| *other == next) {
+                    Some((_, strays)) => strays.push(stray),
+                    None => passed.push((next, vec![stray])),
+                }
+            }
+            for (next, strays) in passed {
+                let there = self.screens[next].monitor.area;
+                let shift = V2::new((here.x - there.x) as f32, ((there.y + there.height) - (here.y + here.height)) as f32);
+                self.screens[next].simulation.adopt_strays(strays, Mapping::shift(shift));
+            }
+        }
+    }
+
     fn sync_screens(&mut self, monitors: Vec<Monitor>) {
         let now = Instant::now();
         let mut kept = Vec::new();
@@ -340,8 +449,13 @@ impl App {
         }
         kept.sort_by_key(|s| s.monitor.index);
         for screen in &mut kept {
-            screen.simulation.walls = desktop::walls(&screen.monitor, &all);
+            let walls = desktop::walls(&screen.monitor, &all);
+            screen.simulation.walls = walls;
+            screen.simulation.neighbours = (!walls.0, !walls.1);
+            screen.rewatch();
         }
+        self.desktop.monitors = all;
+        self.desktop.generation += 1;
         for screen in &mut kept {
             screen.simulation.set_halloween(self.halloween);
         }
@@ -376,6 +490,13 @@ impl App {
         let tolerance = Duration::from_millis(2);
         let power = self.power();
         self.screens.iter_mut().for_each(Screen::check_frame_callback);
+        if self.screens.len() > 1 {
+            self.hand_over(now);
+            if self.settings.snow_on_windows {
+                self.lend(now);
+            }
+            self.pass_snow();
+        }
         for screen in self.screens.iter_mut().filter(|s| s.next_due <= now + tolerance) {
             let began = Instant::now();
             match screen.frame(&mut self.renderer, &self.egl, &self.desktop, &self.settings, power, (self.light, self.night), time, now) {
@@ -466,7 +587,7 @@ fn snapshot(path: &str, seconds: f32) -> Result<(), String> {
         desktop::Window { id: 2, x: 120, y: 120, width: 460, height: 300, flags: 0 },
     ];
     let area = Area { x: 0, y: 0, width, height };
-    let surfaces: Vec<WindowSurface> = desktop.surfaces(&area, (width as f32, height as f32));
+    let surfaces: Vec<WindowSurface> = desktop.surfaces(&area, (width as f32, height as f32), None);
     simulation.update_windows(&surfaces, 0.2, &HashSet::new(), &HashSet::new(), false);
     let dt = 1.0 / 30.0;
     for _ in 0..(seconds / dt) as usize {

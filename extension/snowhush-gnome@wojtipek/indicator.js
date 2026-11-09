@@ -74,6 +74,19 @@ class SnowToggle extends QuickMenuToggle {
         this.menu.addMenuItem(modeSection);
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
+        this._settleMenu = new PopupMenu.PopupSubMenuMenuItem('Gromadzenie');
+        this._labels.push([this._settleMenu.label, 'Gromadzenie']);
+        this._settleItems = new Map();
+        for (const [key, text] of [['ground', 'Na dole ekranu'], ['snow-on-windows', 'Na oknach']]) {
+            const item = new PopupMenu.PopupSwitchMenuItem(text, settings.get_boolean(key));
+            item.connect('toggled', (_item, state) => settings.set_boolean(key, state));
+            this._settleMenu.menu.addMenuItem(item);
+            this._settleItems.set(key, item);
+            this._labels.push([item.label, text]);
+        }
+        this.menu.addMenuItem(this._settleMenu);
+        this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
         this._intensityLabel = new PopupMenu.PopupMenuItem('', {reactive: false});
         this.menu.addMenuItem(this._intensityLabel);
         this._intensityItem = new PopupMenu.PopupBaseMenuItem({activate: false});
@@ -127,6 +140,10 @@ class SnowToggle extends QuickMenuToggle {
         for (const [value, item] of this._modeItems)
             item.setOrnament(modes.includes(value) ? PopupMenu.Ornament.CHECK : PopupMenu.Ornament.NO_DOT);
         this._mixedItem.setToggleState(this._settings.get_boolean('mixed'));
+        for (const [key, item] of this._settleItems)
+            item.setToggleState(this._settings.get_boolean(key));
+        this._settleItems.get('snow-on-windows').setSensitive(!this._settings.get_boolean('behind-windows'));
+        this._settleMenu.visible = modes.some(m => m !== 'rain');
         const intensity = this._settings.get_int('intensity');
         if (Math.round(this._intensity.value * 100) !== intensity)
             this._intensity.value = intensity / 100;

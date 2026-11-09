@@ -11,7 +11,7 @@ pub enum Command {
     Covered { all: bool, fullscreen: Vec<usize> },
     Intensity(f32),
     Opacity(f32),
-    Accumulate(bool),
+    Ground(bool),
     Melt(bool),
     SnowOnWindows(bool),
     OverWindows(bool),
@@ -64,7 +64,7 @@ pub fn parse(line: &str) -> Result<Command, String> {
         "set" => match rest.as_slice() {
             ["intensity", value] => fraction(value).map(Command::Intensity).ok_or_else(bad),
             ["opacity", value] => fraction(value).map(|v| Command::Opacity(v.max(0.1))).ok_or_else(bad),
-            ["accumulate", _] => flag(rest.get(1)).map(Command::Accumulate),
+            ["ground", _] | ["accumulate", _] => flag(rest.get(1)).map(Command::Ground),
             ["melt", _] => flag(rest.get(1)).map(Command::Melt),
             ["snow-on-windows", _] => flag(rest.get(1)).map(Command::SnowOnWindows),
             ["over-windows", _] => flag(rest.get(1)).map(Command::OverWindows),
@@ -203,6 +203,7 @@ mod tests {
         assert!(parse("set intensity nan").is_err());
         assert_eq!(parse("set melt 0").unwrap(), Command::Melt(false));
         assert_eq!(parse("set snow-on-windows 1").unwrap(), Command::SnowOnWindows(true));
+        assert_eq!(parse("set ground 0").unwrap(), Command::Ground(false));
         assert_eq!(parse("set over-windows 0").unwrap(), Command::OverWindows(false));
         assert_eq!(parse("set calm-fps 20").unwrap(), Command::CalmFps(20));
         assert_eq!(parse("set calm-fps 500").unwrap(), Command::CalmFps(60));

@@ -111,7 +111,7 @@ mod walls_tests {
 pub struct Settings {
     pub intensity: f32,
     pub opacity: f32,
-    pub accumulate: bool,
+    pub ground: bool,
     pub melt: bool,
     pub snow_on_windows: bool,
     pub over_windows: bool,
@@ -124,12 +124,18 @@ pub struct Settings {
     pub modes: Vec<Mode>,
 }
 
+impl Settings {
+    pub fn accumulates(&self) -> bool {
+        self.ground || self.snow_on_windows
+    }
+}
+
 impl Default for Settings {
     fn default() -> Settings {
         Settings {
             intensity: 0.5,
             opacity: 1.0,
-            accumulate: true,
+            ground: true,
             melt: true,
             snow_on_windows: true,
             over_windows: true,
@@ -162,6 +168,7 @@ pub struct Desktop {
     pub fullscreen: HashSet<usize>,
     pub paused: bool,
     pub idle: bool,
+    pub monitors: Vec<Monitor>,
 }
 
 impl Desktop {
@@ -176,6 +183,7 @@ impl Desktop {
             all_covered: false,
             fullscreen: HashSet::new(),
             idle: false,
+            monitors: Vec::new(),
             paused: false,
         }
     }
@@ -184,7 +192,29 @@ impl Desktop {
         std::mem::take(&mut self.started_moving)
     }
 
-    pub fn surfaces(&self, area: &Area, size: (f32, f32)) -> Vec<WindowSurface> {
+    pub fn owner(&self, window: &Window) -> Option<usize> {
+        let share = |m: &Monitor| {
+            let a = m.area;
+            if window.y < a.y || window.y >= a.y + a.height {
+                return 0;
+            }
+            ((window.x + window.width).min(a.x + a.width) - window.x.max(a.x)).max(0)
+        };
+        self.monitors.iter().map(|m| (m.index, share(m))).filter(|(_, s)| *s > 0).max_by_key(|(_, s)| *s).map(|(i, _)| i)
+    }
+
+    fn below_display(&self, index: usize, window: &Window) -> bool {
+        let Some(m) = self.monitors.iter().find(|m| m.index == index) else { return false };
+        let (a, b) = (m.area, m.bounds);
+        a.y == b.y
+            && window.y >= a.y
+            && window.y < a.y + 6
+            && self.monitors.iter().any(|o| {
+                o.index != index && o.bounds.y + o.bounds.height == b.y && o.bounds.x < window.x + window.width && o.bounds.x + o.bounds.width > window.x
+            })
+    }
+
+    pub fn surfaces(&self, area: &Area, size: (f32, f32), index: Option<usize>) -> Vec<WindowSurface> {
         let (width, height) = size;
         let sx = width / area.width.max(1) as f32;
         let sy = height / area.height.max(1) as f32;
@@ -193,20 +223,22 @@ impl Desktop {
         let mut surfaces = Vec::new();
         for window in &self.windows {
             let (wl, wt, wr, wb) = (window.x, window.y, window.x + window.width, window.y + window.height);
-            if wr <= left || wl >= right || wb <= top || wt >= bottom {
-                continue;
-            }
             let frame = Rect {
                 x: (wl - left) as f32 * sx,
                 y: (bottom - wb) as f32 * sy,
                 width: window.width as f32 * sx,
                 height: window.height as f32 * sy,
             };
-            let room_above = (wt - top) as f32 * sy >= 6.0 && frame.max_y() < height;
+            if wr <= left || wl >= right || wb <= top || wt >= bottom {
+                blockers.push(frame);
+                continue;
+            }
+            let here = index.is_none_or(|i| self.owner(window).is_none_or(|o| o == i));
+            let room_above = ((wt - top) as f32 * sy >= 6.0 && frame.max_y() < height) || index.is_some_and(|i| self.below_display(i, window));
             let on_screen = frame.max_x() > 0.0 && frame.min_x() < width && frame.max_y() > 0.0;
             let fills_screen = frame.width * frame.height >= width * height * 0.9;
             let cover_only = window.flags & FLAG_COVER_ONLY != 0;
-            if room_above && on_screen && !fills_screen && !cover_only && frame.width >= 80.0 && frame.height >= 40.0 {
+            if here && room_above && on_screen && !fills_screen && !cover_only && frame.width >= 80.0 && frame.height >= 40.0 {
                 let radius = corner_radius(window).min(frame.width / 2.0).min(frame.height / 2.0);
                 let region = Rect { x: frame.x, y: frame.max_y() - radius, width: frame.width, height: 40.0 + radius };
                 surfaces.push(WindowSurface {

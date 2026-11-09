@@ -53,7 +53,8 @@ impl Screen {
         egl.no_vsync();
         let mut simulation = SnowSimulation::new(size.0 as f32, size.1 as f32, settings.intensity);
         simulation.thaws = settings.melt;
-        simulation.accumulates = settings.accumulate;
+        simulation.accumulates = settings.accumulates();
+        simulation.ground_settles = settings.ground;
         simulation.set_modes(&settings.modes);
         simulation.falling_opacity = settings.opacity;
         crate::log!("monitor {}: obszar {:?}, skala {}", monitor.index, monitor.area, monitor.scale);
@@ -275,7 +276,7 @@ impl Screen {
             return;
         }
         self.windows_seen = desktop.generation;
-        let surfaces = desktop.surfaces(&self.monitor.area, (self.simulation.width(), self.simulation.height()));
+        let surfaces = desktop.surfaces(&self.monitor.area, (self.simulation.width(), self.simulation.height()), Some(self.monitor.index));
         if surfaces == self.surfaces {
             return;
         }
@@ -290,6 +291,10 @@ impl Screen {
         self.simulation.update_windows(&surfaces, interval, &HashSet::new(), &elsewhere, false);
         self.surfaces = surfaces;
         self.windows_changed_at = now;
+    }
+
+    pub fn rewatch(&mut self) {
+        self.windows_seen = 0;
     }
 
     pub fn drop_window_snow(&mut self) {

@@ -12,9 +12,7 @@ const HALLOWEEN = [
 ];
 
 const SWITCHES = [
-    ['accumulate', 'Gromadzenie'],
     ['melt', 'Topnienie'],
-    ['snow-on-windows', 'Śnieg na oknach'],
     ['over-windows', 'Płatki nad oknami'],
     ['behind-windows', 'Za oknami'],
     ['sharp', 'Ostrzejszy obraz'],
@@ -113,7 +111,6 @@ export default class SnowhushPreferences extends ExtensionPreferences {
         };
         const syncSensitive = () => {
             const behind = settings.get_boolean('behind-windows');
-            rows.get('snow-on-windows').sensitive = !behind;
             rows.get('over-windows').sensitive = !behind;
             rows.get('rest-when-hidden').sensitive = behind || !settings.get_boolean('over-windows');
         };

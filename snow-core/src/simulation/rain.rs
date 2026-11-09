@@ -93,7 +93,7 @@ struct Splash {
 }
 
 #[derive(Clone, Copy)]
-struct GlassDrop {
+pub(super) struct GlassDrop {
     layer: WindowId,
     /// From the left end of the window's top edge.
     offset: V2,
@@ -177,6 +177,24 @@ pub(super) struct Rain {
 }
 
 impl Rain {
+    /// Takes the drops on a window's glass off, to go along with the window to another display.
+    pub(super) fn take(&mut self, id: WindowId) -> Vec<GlassDrop> {
+        let (taken, kept) = self.drops.drain(..).partition(|drop| drop.layer == id);
+        self.drops = kept;
+        taken
+    }
+
+    /// Puts drops taken off a window's glass on another display onto it here; `scale` takes that display's pixels to
+    /// these.
+    pub(super) fn adopt(&mut self, drops: Vec<GlassDrop>, scale: f32) {
+        self.drops.retain(|drop| !drops.iter().any(|other| other.layer == drop.layer));
+        self.drops.extend(drops.into_iter().map(|mut drop| {
+            drop.offset *= scale;
+            drop.face *= scale;
+            drop
+        }));
+    }
+
     pub(super) fn sprite_count(&self) -> usize {
         self.splashes.len() + self.drops.len()
     }

@@ -33,14 +33,15 @@ Otwórz **Szybkie ustawienia** (prawy górny róg, tam gdzie Wi-Fi i Bluetooth)
 
 - **Śnieg**, **Jesienne liście**, **Deszcz** albo **Kwiaty wiśni**: co pada. Przy zmianie podmuch zwiewa to, co leży, a potem z góry zaczyna padać nowe. Kafelek zmienia wtedy nazwę i ikonę. Deszcz rozpryskuje się na oknach i spływa kroplami po ich szybach
 - **Mieszane**: dwie pogody naraz, na przykład śnieg z deszczem. Po włączeniu zaznacza się dwie, a zaznaczenie trzeciej odznacza tę wybraną najdawniej
+- **Gromadzenie**: gdzie śnieg osiada: **Na dole ekranu** i **Na oknach** (każde z osobna można wyłączyć; deszcz i tak rozpryskuje się na dole)
 - **Intensywność**: suwak od 0 do 100%
 - **Zdmuchnij śnieg** (albo **Zdmuchnij liście** czy **Zdmuchnij płatki**; przy deszczu tej pozycji nie ma): podmuch wiatru zwiewa cały śnieg, także z okien na innych obszarach roboczych
 - **Opcje**: otwiera okno ustawień
 
 W oknie ustawień (dostępnym też przy rozszerzeniu w aplikacji *Rozszerzenia*) są:
 
-- **Gromadzenie**, **Topnienie**
-- **Śnieg na oknach**, **Płatki nad oknami** (po wyłączeniu płatki chowają się za oknami, a śnieg na krawędziach okien zostaje)
+- **Topnienie**
+- **Płatki nad oknami** (po wyłączeniu płatki chowają się za oknami, a śnieg na krawędziach okien zostaje)
 - **Za oknami**: śnieg tylko na tapecie
 - **Ostrzejszy obraz**: rysowanie w pełnej rozdzielczości ekranu zamiast w skali GNOME (więcej pracy dla karty graficznej)
 - **Widoczność opadów**: suwak od 10 do 100%, przy mniejszych wartościach to, co spada, jest bardziej przezroczyste

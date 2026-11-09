@@ -18,6 +18,13 @@ export default class SnowhushExtension extends Extension {
             this._settings.set_int('intensity', OLD_SNOWFALL[old.unpack()] ?? 50);
             this._settings.reset('snowfall');
         }
+        const accumulate = this._settings.get_user_value('accumulate');
+        if (accumulate !== null) {
+            this._settings.set_boolean('ground', accumulate.unpack());
+            if (!accumulate.unpack())
+                this._settings.set_boolean('snow-on-windows', false);
+            this._settings.reset('accumulate');
+        }
         this._engine = new Engine(`${this.path}/bin/snowhush-engine`, () => this._onEngineStarted());
         this._scout = new Scout(this._engine);
         this._watchWorkspaceAnimation();
@@ -108,7 +115,7 @@ export default class SnowhushExtension extends Extension {
         const s = this._settings;
         this._engine.send(`set intensity ${s.get_int('intensity') / 100}`);
         this._engine.send(`set opacity ${s.get_int('opacity') / 100}`);
-        this._engine.send(`set accumulate ${s.get_boolean('accumulate') ? 1 : 0}`);
+        this._engine.send(`set ground ${s.get_boolean('ground') ? 1 : 0}`);
         this._engine.send(`set melt ${s.get_boolean('melt') ? 1 : 0}`);
         this._engine.send(`set snow-on-windows ${this._snowOnWindows() ? 1 : 0}`);
         this._engine.send(`set over-windows ${this._overWindows() ? 1 : 0}`);
@@ -155,7 +162,7 @@ export default class SnowhushExtension extends Extension {
         case 'calm-fps':
             this._engine.send(`set calm-fps ${s.get_int('calm-fps')}`);
             break;
-        case 'accumulate':
+        case 'ground':
         case 'melt':
         case 'sharp':
         case 'idle-slowdown':

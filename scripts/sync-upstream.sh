@@ -6,6 +6,8 @@ trap 'rm -rf "$TMP"' EXIT
 git clone -q --depth 1 https://github.com/mbezruchko/Snowhush "$TMP/upstream"
 rm -rf "$ROOT/snow-core/src"
 cp -r "$TMP/upstream/core/src" "$ROOT/snow-core/src"
+rm -rf "$ROOT/locales"
+cp -r "$TMP/upstream/locales" "$ROOT/locales"
 cp "$TMP/upstream/LICENSE" "$ROOT/LICENSE-SNOWHUSH"
 echo "Wersja oryginału: $(git -C "$TMP/upstream" log -1 --format='%h %cs %s')"
 cd "$ROOT" && cargo test --release -p snow-core

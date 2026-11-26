@@ -311,7 +311,7 @@ export class Engine {
         const index = this._overlays.get(window);
         if (index === undefined || index < 0 || index >= Main.layoutManager.monitors.length)
             return false;
-        const area = Main.layoutManager.getWorkAreaForMonitor(index);
+        const area = groundArea(index);
         const frame = window.get_frame_rect();
         if (frame.x === area.x && frame.y === area.y && frame.width === area.width && frame.height === area.height)
             return false;
@@ -337,4 +337,13 @@ export class Engine {
         for (const window of this._overlays.keys())
             this._position(window);
     }
+}
+
+// Work area extended down to the monitor bottom, so snow settles on the screen
+// edge instead of floating on top of a full-width bottom strut (e.g. a fixed dock).
+export function groundArea(index) {
+    const area = Main.layoutManager.getWorkAreaForMonitor(index);
+    const monitor = Main.layoutManager.monitors[index];
+    const bottom = monitor.y + monitor.height;
+    return {x: area.x, y: area.y, width: area.width, height: bottom - area.y};
 }

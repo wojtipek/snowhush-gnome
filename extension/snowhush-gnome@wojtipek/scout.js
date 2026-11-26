@@ -3,6 +3,7 @@ import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import {groundArea} from './engine.js';
 
 const FLAG_MAXIMIZED = 1;
 const FLAG_FULLSCREEN = 2;
@@ -270,7 +271,7 @@ export class Scout {
 
     _sendMonitors() {
         const entries = Main.layoutManager.monitors.map((monitor, index) => {
-            const area = Main.layoutManager.getWorkAreaForMonitor(index);
+            const area = groundArea(index);
             const scale = global.display.get_monitor_scale(index);
             return `${index}:${area.x},${area.y},${area.width},${area.height},${scale.toFixed(3)},` +
                 `${monitor.x},${monitor.y},${monitor.width},${monitor.height}`;
